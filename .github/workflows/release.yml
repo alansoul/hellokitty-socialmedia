@@ -20,11 +20,6 @@ jobs:
     # Do not run this action if the commit was made by the release bot itself.
     if: "!contains(github.event.head_commit.message, 'chore(release)')"
 
-    # ⚠️ IMPORTANT: Because your package.json is inside the hellokitty folder
-    defaults:
-      run:
-        working-directory: ./hellokitty
-
     steps:
       - name: 🛒 Checkout Repository
         uses: actions/checkout@v4
