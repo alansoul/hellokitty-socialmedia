@@ -1,0 +1,23 @@
+#  <-- Custom Action to setup Node & pnpm
+
+name: 'Setup Enterprise Nx Workspace'
+description: 'Checks out repo, sets up Node, installs pnpm, and caches dependencies.'
+runs:
+  using: "composite"
+  steps:
+    - name: ⚙️ Setup pnpm
+      uses: pnpm/action-setup@v3
+      with:
+        version: 9
+
+    - name: ⚙️ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+
+    - name: 📦 Install Dependencies
+      shell: bash
+      # 'pnpm install --frozen-lockfile' ensures CI fails if the lockfile is out of sync.
+      # This is a strict requirement for enterprise production code.
+      run: pnpm install --frozen-lockfile

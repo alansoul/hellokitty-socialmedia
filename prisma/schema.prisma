@@ -1,0 +1,132 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum MediaType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+model User {
+  id            String    @id @default(uuid())
+  username      String    @unique
+  email         String    @unique
+  passwordHash  String
+  displayName   String?   
+  bio           String?   
+  avatarUrl     String?
+  role          Role      @default(USER)
+  isVerified    Boolean   @default(false)
+  
+  // Auditing
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+
+  // Self-Relations (Followers & Following)
+  followers     Follows[] @relation("following")
+  following     Follows[] @relation("follower")
+
+  @@map("users")          
+  @@index([username])     
+  @@index([email])        
+}
+
+// Explicit Join Table for Followers
+model Follows {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower    User     @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId]) 
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
+}
+
+model Post {
+  id          String    @id @default(uuid())
+  content     String?   @db.Text 
+  mediaUrl    String?
+  mediaType   MediaType @default(TEXT)
+  
+  // Denormalized counters for fast UI rendering
+  likesCount  Int       @default(0)
+  commentsCount Int     @default(0)
+  viewCount   Int       @default(0)
+
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  comments    Comment[]
+  likes       Like[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("posts")
+  @@index([authorId])            
+  @@index([createdAt(sort: Desc)]) 
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("comments")
+  @@index([postId])
+  @@index([authorId])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId]) 
+  @@map("likes")
+  @@index([userId])
+  @@index([postId])
+}

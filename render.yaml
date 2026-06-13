@@ -1,0 +1,28 @@
+# render.yaml
+services:
+  - type: web
+    name: hellokitty-core-api
+    runtime: node # ✨ Changed from 'env' to 'runtime'
+    region: ohio
+    plan: free
+    
+    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && pnpm nx build core-api
+    startCommand: node dist/apps/core-api/main.js
+    
+    envVars:
+      - key: NODE_VERSION # ✨ Moved here
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false 
+      - key: REDIS_URL
+        sync: false 
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
