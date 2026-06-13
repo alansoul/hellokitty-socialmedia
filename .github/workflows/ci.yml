@@ -42,11 +42,9 @@ jobs:
       # --- START NX AFFECTED COMMANDS ---
 
       - name: 🧹 Lint Affected
-        working-directory: ./hellokitty
         run: pnpm nx affected -t lint --parallel=3
 
       - name: 🧪 Test Affected
-        working-directory: ./hellokitty
         run: pnpm nx affected -t test --parallel=3 --configuration=ci
 
       - name: 🏗️ Build Affected

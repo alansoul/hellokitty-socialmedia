@@ -5,7 +5,7 @@ name: Automated Release
 on:
   push:
     branches:
-      - master # Triggers when PRs are merged to master
+      - main # Changed from master to main
 
 permissions:
   contents: write # ⚠️ CRITICAL: Needed for the bot to push tags and create GitHub Releases
