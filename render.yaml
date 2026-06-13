@@ -6,7 +6,8 @@ services:
     region: ohio
     plan: free
     
-    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && pnpm nx build core-api
+    # ✨ ADDED: npx prisma generate
+    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && npx prisma generate && pnpm nx build core-api
     startCommand: node dist/apps/core-api/main.js
     
     envVars:
