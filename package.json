@@ -2,7 +2,9 @@
   "name": "@hellokitty/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "postinstall": "prisma generate"
+  },
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.8.0",
