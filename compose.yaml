@@ -40,8 +40,23 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+   # 5. KONG API GATEWAY
+  kong:
+    image: kong:latest
+    environment:
+      KONG_DATABASE: "off" # DB-less mode
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+    ports:
+      - "8000:8000" # Your Frontend will now talk to port 8000!
+    volumes:
+      - ./kong.yml:/usr/local/kong/declarative/kong.yml
+
 volumes:
   postgres_data:
   redis_data:
   mongo_data:
   rabbitmq_data:
+  kong_data:

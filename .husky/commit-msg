@@ -1,0 +1,2 @@
+# This checks the text of the commit message
+npx --no -- commitlint --edit ${1}

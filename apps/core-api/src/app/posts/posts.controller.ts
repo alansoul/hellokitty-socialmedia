@@ -1,12 +1,6 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseInterceptors,
-  UploadedFile,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { PostsService } from './posts.service';
 import 'multer'; // Tells TypeScript to load the Multer types
 
@@ -31,6 +25,9 @@ export class PostsController {
   }
 
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey('global_feed')
+  @CacheTTL(10000) // 10 seconds
   findAll() {
     return this.postsService.findAll();
   }

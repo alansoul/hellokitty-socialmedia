@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# This runs before every commit. It forces the code to format perfectly!
+pnpm nx format:write

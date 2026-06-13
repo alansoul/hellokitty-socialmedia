@@ -1,0 +1,15 @@
+# .github/CODEOWNERS
+
+# 1. Global Default (You own everything by default)
+*                   @alansoul
+
+# 2. Database & Core Infrastructure (Strict Approval Required)
+/libs/db/*          @alansoul
+/docker-compose.yml @alansoul
+/render.yaml        @alansoul
+/.github/*          @alansoul
+
+# 3. Future Teams (When you hire people, you assign them here)
+# /apps/web/*       @frontend-team
+# /apps/core-api/*  @backend-team
+# /libs/ui/*        @design-system-team

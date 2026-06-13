@@ -1,0 +1,27 @@
+_format_version: "3.0"
+
+services:
+  # 1. Our NestJS Core Monolith
+  - name: core-api-service
+    # host.docker.internal lets Kong (inside Docker) talk to NestJS (running on your Windows host)
+    url: http://host.docker.internal:3000
+    routes:
+      - name: core-api-routes
+        paths:
+          - /api
+
+  # ✨ ENTERPRISE ADDITION: Global Plugins
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 60
+      policy: local
+      fault_tolerant: true
+
+  # (Later, we will add our Python AI Service here!)
+  # - name: python-ai-service
+  #   url: http://host.docker.internal:5000
+  #   routes:
+  #     - name: ai-routes
+  #       paths:
+  #         - /api/recommendations
