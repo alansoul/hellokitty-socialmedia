@@ -8,15 +8,15 @@ services:
       POSTGRES_PASSWORD: hellokitty_password
       POSTGRES_DB: hellokitty_db
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-# ✨ Added Redis for Caching and Message Queues!
+  # ✨ Added Redis for Caching and Message Queues!
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
 
@@ -27,7 +27,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: hellokitty_mongo
       MONGO_INITDB_ROOT_PASSWORD: hellokitty_mongo_pass
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
 
@@ -35,15 +35,13 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     ports:
-      - "5672:5672"   # The connection port
-      - "15672:15672" # The Web UI dashboard
+      - '5672:5672' # The connection port
+      - '15672:15672' # The Web UI dashboard
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-      
+
 volumes:
   postgres_data:
   redis_data:
   mongo_data:
   rabbitmq_data:
-
-  

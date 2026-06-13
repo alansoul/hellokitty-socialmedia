@@ -14,11 +14,14 @@ const redisUrl = new URL(process.env.REDIS_URL || 'redis://localhost:6379');
     // ✨ Configure the Redis Connection
     BullModule.forRoot({
       connection: {
-         host: redisUrl.hostname,
+        host: redisUrl.hostname,
         port: Number(redisUrl.port),
         password: redisUrl.password || undefined,
         // ✨ ENTERPRISE FIX: If the URL starts with 'rediss', enforce strict TLS/SSL!
-        tls: redisUrl.protocol === 'rediss:' ? { rejectUnauthorized: false } : undefined,
+        tls:
+          redisUrl.protocol === 'rediss:'
+            ? { rejectUnauthorized: false }
+            : undefined,
       },
     }),
     PostsModule,

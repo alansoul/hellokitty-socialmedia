@@ -34,7 +34,7 @@ export interface Post {
   commentsCount: number;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Optional relations (Populated when we join data)
   author?: User;
   comments?: Comment[];

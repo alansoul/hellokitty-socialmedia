@@ -5,20 +5,20 @@ services:
     runtime: node # ✨ Changed from 'env' to 'runtime'
     region: ohio
     plan: free
-    
+
     # ✨ ADDED: npx prisma generate
     buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && npx prisma generate && pnpm nx build core-api
     startCommand: node dist/apps/core-api/main.js
-    
+
     envVars:
       - key: NODE_VERSION # ✨ Moved here
-        value: "20"
+        value: '20'
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false 
+        sync: false
       - key: REDIS_URL
-        sync: false 
+        sync: false
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY

@@ -17,7 +17,10 @@ export class CloudinaryService {
   }
 
   // A reusable function to upload any image or video!
-  async uploadFile(filePath: string, folder = 'hellokitty_posts'): Promise<string> {
+  async uploadFile(
+    filePath: string,
+    folder = 'hellokitty_posts',
+  ): Promise<string> {
     try {
       const result = await cloudinary.uploader.upload(filePath, {
         folder: folder,

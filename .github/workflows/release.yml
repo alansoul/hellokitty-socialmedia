@@ -15,8 +15,8 @@ jobs:
   release:
     name: Version, Changelog & Release
     runs-on: ubuntu-latest
-    
-    # ENTERPRISE TRICK: Prevent infinite loops. 
+
+    # ENTERPRISE TRICK: Prevent infinite loops.
     # Do not run this action if the commit was made by the release bot itself.
     if: "!contains(github.event.head_commit.message, 'chore(release)')"
 
@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Required to calculate changelog differences
-          
+
       - name: ⚙️ Setup pnpm
         uses: pnpm/action-setup@v3
         with:
@@ -53,7 +53,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: 🚀 Run Nx Release
-        # This command will automatically: 
+        # This command will automatically:
         # 1. Bump versions in package.json files
         # 2. Generate CHANGELOG.md based on your PR titles
         # 3. Create a GitHub Release with notes

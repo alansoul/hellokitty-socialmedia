@@ -35,7 +35,7 @@ export default function Feed() {
 
     const formData = new FormData();
     formData.append('content', content);
-    formData.append('authorId', 'test-user-id'); 
+    formData.append('authorId', 'test-user-id');
     if (file) {
       formData.append('file', file);
     }
@@ -45,7 +45,7 @@ export default function Feed() {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to create post');
@@ -66,7 +66,10 @@ export default function Feed() {
     <div className="max-w-2xl mx-auto p-4 font-sans text-gray-800">
       <h1 className="text-3xl font-bold mb-6">Internal Feed</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white p-4 rounded-xl shadow-md border mb-8">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-4 rounded-xl shadow-md border mb-8"
+      >
         <textarea
           className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 mb-4"
           placeholder="What's happening?"
@@ -75,14 +78,14 @@ export default function Feed() {
           onChange={(e) => setContent(e.target.value)}
         />
         <div className="flex justify-between items-center">
-          <input 
-            type="file" 
-            accept="image/*,video/*" 
-            onChange={(e) => setFile(e.target.files?.[0] || null)} 
+          <input
+            type="file"
+            accept="image/*,video/*"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
             className="text-sm text-gray-500"
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             className="bg-black text-white px-6 py-2 rounded-full font-bold disabled:opacity-50"
           >
@@ -93,25 +96,38 @@ export default function Feed() {
 
       <div className="space-y-6">
         {posts.map((post) => (
-          <div key={post.id} className="bg-white p-4 rounded-xl shadow-sm border">
+          <div
+            key={post.id}
+            className="bg-white p-4 rounded-xl shadow-sm border"
+          >
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold mr-3">
                 {post.author?.displayName?.[0] || 'U'}
               </div>
               <div>
                 <h3 className="font-bold">{post.author?.displayName}</h3>
-                <p className="text-sm text-gray-500">@{post.author?.username}</p>
+                <p className="text-sm text-gray-500">
+                  @{post.author?.username}
+                </p>
               </div>
             </div>
-            
+
             <p className="text-lg mb-4">{post.content}</p>
-            
+
             {post.mediaUrl && (
               <div className="rounded-xl overflow-hidden mb-4 bg-gray-100">
                 {post.mediaType === 'VIDEO' ? (
-                  <video src={post.mediaUrl} controls className="w-full max-h-96 object-contain" />
+                  <video
+                    src={post.mediaUrl}
+                    controls
+                    className="w-full max-h-96 object-contain"
+                  />
                 ) : (
-                  <img src={post.mediaUrl} alt="Media" className="w-full max-h-96 object-contain" />
+                  <img
+                    src={post.mediaUrl}
+                    alt="Media"
+                    className="w-full max-h-96 object-contain"
+                  />
                 )}
               </div>
             )}

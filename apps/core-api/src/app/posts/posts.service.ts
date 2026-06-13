@@ -10,17 +10,24 @@ export class PostsService {
   constructor(
     private readonly prisma: PrismaService,
     // Notice we removed CloudinaryService here! Only the Worker needs it now.
-    @InjectQueue('media-upload') private readonly mediaQueue: Queue 
+    @InjectQueue('media-upload') private readonly mediaQueue: Queue,
   ) {}
 
-  async createPost(data: { content?: string; authorId: string }, file?: Express.Multer.File) {
+  async createPost(
+    data: { content?: string; authorId: string },
+    file?: Express.Multer.File,
+  ) {
     const isVideo = file?.mimetype.startsWith('video') || false;
 
     // 1. Save to DB INSTANTLY (Notice mediaUrl is null for now)
     const post = await this.prisma.post.create({
       data: {
         content: data.content,
-        mediaType: file ? (isVideo ? MediaType.VIDEO : MediaType.IMAGE) : MediaType.TEXT,
+        mediaType: file
+          ? isVideo
+            ? MediaType.VIDEO
+            : MediaType.IMAGE
+          : MediaType.TEXT,
         authorId: data.authorId,
       },
     });

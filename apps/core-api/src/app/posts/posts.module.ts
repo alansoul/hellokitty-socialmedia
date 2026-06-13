@@ -5,7 +5,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { PostsController } from './posts.controller';
 import { CloudinaryService } from '../cloudinary.service';
-import { PrismaService } from '@hellokitty/db'; 
+import { PrismaService } from '@hellokitty/db';
 import { PostsWorker } from './posts.worker';
 
 @Module({
@@ -16,7 +16,7 @@ import { PostsWorker } from './posts.worker';
     }),
     // 2. Tell Multer to save uploaded files to a temp folder
     MulterModule.register({
-      dest: './tmp/uploads', 
+      dest: './tmp/uploads',
     }),
   ],
   controllers: [PostsController],

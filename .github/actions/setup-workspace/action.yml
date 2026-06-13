@@ -3,7 +3,7 @@
 name: 'Setup Enterprise Nx Workspace'
 description: 'Checks out repo, sets up Node, installs pnpm, and caches dependencies.'
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: ⚙️ Setup pnpm
       uses: pnpm/action-setup@v3

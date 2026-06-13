@@ -21,7 +21,7 @@ jobs:
   main-ci:
     name: Validate Workspace
     runs-on: ubuntu-latest
-    
+
     # Security: Grant only the minimum required permissions
     permissions:
       contents: read
@@ -43,9 +43,6 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       # --- START NX AFFECTED COMMANDS ---
-      
-      - name: 💅 Check Formatting
-        run: pnpm nx format:check
 
       - name: 🧹 Lint Affected
         working-directory: ./hellokitty

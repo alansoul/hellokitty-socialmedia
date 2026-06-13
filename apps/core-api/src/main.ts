@@ -3,11 +3,11 @@
  * This is only a minimal backend to get started.
  */
 
-import { Logger, ValidationPipe  } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { PrismaService } from '@hellokitty/db';
-import { GlobalExceptionFilter } from './app/filters/global-exception.filter'; 
+import { GlobalExceptionFilter } from './app/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,7 +16,7 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:4200',
     credentials: true,
-  }); 
+  });
 
   // Global Validation: Automatically strip malicious/unmapped fields from incoming JSON
   app.useGlobalPipes(
@@ -26,9 +26,8 @@ async function bootstrap() {
     }),
   );
 
-  
   // ✨ Attach the Global Error Handler!
-  app.useGlobalFilters(new GlobalExceptionFilter()); 
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
@@ -45,7 +44,7 @@ async function bootstrap() {
         email: 'test@hellokitty.com',
         passwordHash: 'fake_hash',
         displayName: 'Hello Kitty Fan',
-      }
+      },
     });
     Logger.log('🌱 Seeded test user into Database!');
   }

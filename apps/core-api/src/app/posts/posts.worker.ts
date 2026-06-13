@@ -18,7 +18,9 @@ export class PostsWorker extends WorkerHost {
   }
 
   // This function runs automatically whenever a new job hits Redis
-  async process(job: Job<{ postId: string; filePath: string; isVideo: boolean }>) {
+  async process(
+    job: Job<{ postId: string; filePath: string; isVideo: boolean }>,
+  ) {
     this.logger.log(`👷 Processing media for Post ${job.data.postId}...`);
 
     try {
@@ -34,9 +36,14 @@ export class PostsWorker extends WorkerHost {
       // 3. Delete the temporary file from our disk to save space
       await fs.unlink(job.data.filePath);
 
-      this.logger.log(`✅ Successfully processed media for Post ${job.data.postId}`);
+      this.logger.log(
+        `✅ Successfully processed media for Post ${job.data.postId}`,
+      );
     } catch (error) {
-      this.logger.error(`❌ Failed to process media for Post ${job.data.postId}`, error);
+      this.logger.error(
+        `❌ Failed to process media for Post ${job.data.postId}`,
+        error,
+      );
       throw error; // BullMQ will automatically retry the job later if it fails!
     }
   }
