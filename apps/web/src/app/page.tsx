@@ -4,8 +4,8 @@
 import { useEffect, useState } from 'react';
 import { Post } from '@hellokitty/types'; // ✨ Import the strict type from our shared library!
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL is not defined');
+// Provide a safe fallback so cloud builds (GitHub/Vercel) don't crash
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
 
 export default function Feed() {
   // ✨ Replace 'any[]' with 'Post[]'
