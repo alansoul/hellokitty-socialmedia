@@ -2,10 +2,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Post } from '@hellokitty/types'; 
+import { Post } from '@hellokitty/types';
 
 // ✨ Dynamic URL with a safe fallback for cloud builds
-const SOCIAL_API = process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
+const SOCIAL_API =
+  process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
 
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
