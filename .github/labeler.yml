@@ -1,0 +1,13 @@
+"domain: auth":
+  - any:
+    - 'apps/auth-api/**'
+    - 'libs/iam/**'
+
+"domain: social":
+  - any:
+    - 'apps/social-api/**'
+    - 'libs/social/**'
+
+"domain: frontend":
+  - any:
+    - 'apps/web/**'

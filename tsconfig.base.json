@@ -1,15 +1,15 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "rootDir": ".",
+    "rootDir": "./",
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "NodeNext",
+    "module": "esnext",
     "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
@@ -17,7 +17,15 @@
     "allowSyntheticDefaultImports": true,
     "paths": {
       "@hellokitty/db": ["./libs/db/src/index.ts"],
-      "@hellokitty/types": ["./libs/types/src/index.ts"]
+      "@hellokitty/types": ["./libs/types/src/index.ts"],
+      "@hellokitty/auth": ["./libs/auth/src/index.ts"],
+      "@hellokitty/feed": ["./libs/feed/src/index.ts"],
+      "@hellokitty/data-access": ["./libs/iam/data-access/src/index.ts"],
+      "@hellokitty/feature-auth": ["./libs/iam/feature-auth/src/index.ts"],
+      "@hellokitty/feature-mfa": ["./libs/iam/feature-mfa/src/index.ts"],
+      "@hellokitty/utils-crypto": ["./libs/iam/utils-crypto/src/index.ts"],
+      "@hellokitty/social/data-access": ["./libs/social/data-access/src/index.ts"],
+      "@prisma/client/social": ["./node_modules/@prisma/client/social/index.d.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

@@ -1,0 +1,1306 @@
+
+
+=== START OF FILE: compose.yaml ===
+
+# compose.yaml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: hellokitty_user
+      POSTGRES_PASSWORD: hellokitty_password
+      POSTGRES_DB: hellokitty_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ✨ Added Redis for Caching and Message Queues!
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+  # 3. MongoDB for Chat/Unstructured Data
+  mongodb:
+    image: mongo:6-jammy
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: hellokitty_mongo
+      MONGO_INITDB_ROOT_PASSWORD: hellokitty_mongo_pass
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+
+  # 4. RabbitMQ for Microservice Events
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - '5672:5672' # The connection port
+      - '15672:15672' # The Web UI dashboard
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+    # 5. KONG API GATEWAY
+  kong:
+    image: kong:latest
+    environment:
+      KONG_DATABASE: 'off' # DB-less mode
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+    ports:
+      - '8000:8000' # Your Frontend will now talk to port 8000!
+    volumes:
+      - ./kong.yml:/usr/local/kong/declarative/kong.yml
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongo_data:
+  rabbitmq_data:
+  kong_data:
+
+
+
+=== START OF FILE: kong.yml ===
+
+_format_version: '3.0'
+
+services:
+  # -----------------------------------------------------
+  # 1. AUTH DOMAIN (Identity, Login, MFA)
+  # -----------------------------------------------------
+  - name: auth-api-service
+    # host.docker.internal points back to your Windows machine (Port 3001)
+    url: http://host.docker.internal:3001
+    routes:
+      - name: auth-routes
+        paths:
+          - /api/auth     # All login/signup requests go here
+        strip_path: false # Keeps the '/api/auth' prefix when sending to NestJS
+
+  # -----------------------------------------------------
+  # 2. SOCIAL DOMAIN (Posts, Likes, Comments, Profiles)
+  # -----------------------------------------------------
+  - name: social-api-service
+    # host.docker.internal points back to your Windows machine (Port 3002)
+    url: http://host.docker.internal:3002
+    routes:
+      - name: social-routes
+        paths:
+          - /api/posts    # The posts controller we just moved!
+          - /api/profiles # For user social profiles
+          - /api/comments # For post comments
+        strip_path: false
+
+# ✨ ENTERPRISE ADDITION: Global Plugins
+plugins:
+  - name: rate-limiting
+    config:
+      minute: 100        # Allow 100 requests per minute per user
+      policy: local
+      fault_tolerant: true
+
+
+=== START OF FILE: pnpm-workspace.yaml ===
+
+packages:
+  - 'apps/*'
+  - 'libs/*'
+allowBuilds:
+  '@prisma/engines': true
+  prisma: true
+
+
+
+=== START OF FILE: render.yaml ===
+
+services:
+  # 1. THE AUTHENTICATION API
+  - type: web
+    name: hellokitty-auth-api
+    runtime: node
+    region: ohio
+    plan: free
+    # Generate the IAM Postgres Client, then build auth-api
+    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && npx prisma generate --schema=libs/iam/data-access/prisma/schema.prisma && pnpm nx build auth-api
+    startCommand: node dist/apps/auth-api/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_DATABASE_URL
+        sync: false
+
+  # 2. THE SOCIAL MEDIA API
+  - type: web
+    name: hellokitty-social-api
+    runtime: node
+    region: ohio
+    plan: free
+    # Generate the Social Mongo Client, then build social-api
+    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && npx prisma generate --schema=libs/social/data-access/prisma/schema.prisma && pnpm nx build social-api
+    startCommand: node dist/apps/social-api/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SOCIAL_DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+
+=== START OF FILE: .github\dependabot.yml ===
+
+# .github/dependabot.yml
+version: 2
+updates:
+  # Maintain dependencies for pnpm
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'chore(deps)'
+    labels:
+      - 'dependencies'
+
+  # Maintain Docker images (Postgres, Redis, Kong)
+  - package-ecosystem: 'docker'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    commit-message:
+      prefix: 'chore(docker)'
+
+
+
+=== START OF FILE: .github\labeler.yml ===
+
+"domain: auth":
+  - any:
+    - 'apps/auth-api/**'
+    - 'libs/iam/**'
+
+"domain: social":
+  - any:
+    - 'apps/social-api/**'
+    - 'libs/social/**'
+
+"domain: frontend":
+  - any:
+    - 'apps/web/**'
+
+
+=== START OF FILE: .github\actions\setup-workspace\action.yml ===
+
+#  <-- Custom Action to setup Node & pnpm
+
+name: 'Setup Enterprise Nx Workspace'
+description: 'Checks out repo, sets up Node, installs pnpm, and caches dependencies.'
+runs:
+  using: 'composite'
+  steps:
+    - name: ⚙️ Setup pnpm
+      uses: pnpm/action-setup@v3
+      with:
+        version: 9
+
+    - name: ⚙️ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'pnpm'
+
+    - name: 📦 Install Dependencies
+      shell: bash
+      # 'pnpm install --frozen-lockfile' ensures CI fails if the lockfile is out of sync.
+      # This is a strict requirement for enterprise production code.
+      run: pnpm install --frozen-lockfile
+
+
+
+=== START OF FILE: .github\ISSUE_TEMPLATE\bug.yml ===
+
+name: 🐛 Bug Report
+description: Report a bug in the HelloKitty platform
+title: "[BUG] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for taking the time to report this! Please fill out the form below."
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Which environment?
+      options:
+        - auth-api
+        - social-api
+        - web (Next.js frontend)
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce?
+      description: What exactly did you click or type to make this crash?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Paste any red errors from your terminal or browser console here.
+      render: shell
+
+
+=== START OF FILE: .github\workflows\ci.yml ===
+
+# <-- Main Pull Request Pipeline
+
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+# 🛑 CONCURRENCY: If a dev pushes multiple times rapidly, cancel the old runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+  
+jobs:
+  main-ci:
+    name: Validate Workspace
+    runs-on: ubuntu-latest
+
+    # Security: Grant only the minimum required permissions
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          # REQUIRED for Nx Affected! It needs Git history to compare branches.
+          fetch-depth: 0
+
+      # 🚀 Use our custom Composite Action defined above!
+      - name: 🛠️ Setup Workspace
+        uses: ./.github/actions/setup-workspace
+
+      # 🧠 Figure out the base/head commit for Nx
+      - name: 🔍 Derive SHAs for nx affected
+        uses: nrwl/nx-set-shas@v4
+
+      # --- START NX AFFECTED COMMANDS ---
+
+      - name: 🧹 Lint Affected
+        run: pnpm nx affected -t lint --parallel=3
+
+      - name: 🧪 Test Affected
+        run: pnpm nx affected -t test --parallel=3 --configuration=ci
+
+      - name: 🏗️ Build Affected
+        run: pnpm nx affected -t build --parallel=3
+
+
+
+=== START OF FILE: .github\workflows\codeql.yml ===
+
+name: "CodeQL Security Scan"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 0 * * 0' # Also runs automatically every Sunday at midnight
+
+jobs:
+  analyze:
+    name: Analyze Code
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript # Perfect for NestJS/Next.js
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+
+=== START OF FILE: .github\workflows\label-pr.yml ===
+
+name: Auto-Label PRs
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+
+
+=== START OF FILE: .github\workflows\release.yml ===
+
+# <-- Automated Release Pipeline (Optional)
+
+name: Automated Release
+
+on:
+  push:
+    branches:
+      - main # Changed from master to main
+
+permissions:
+  contents: write # ⚠️ CRITICAL: Needed for the bot to push tags and create GitHub Releases
+  issues: write
+
+jobs:
+  release:
+    name: Version, Changelog & Release
+    runs-on: ubuntu-latest
+
+    # ENTERPRISE TRICK: Prevent infinite loops.
+    # Do not run this action if the commit was made by the release bot itself.
+    if: "!contains(github.event.head_commit.message, 'chore(release)')"
+
+    steps:
+      - name: 🛒 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required to calculate changelog differences
+
+      - name: ⚙️ Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: './hellokitty/pnpm-lock.yaml' # Point to the lockfile
+
+      - name: 📦 Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🔐 Configure Git Bot Identity
+        # This tells Git WHO is making the version bumps
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 🚀 Run Nx Release
+        # This command will automatically:
+        # 1. Bump versions in package.json files
+        # 2. Generate CHANGELOG.md based on your PR titles
+        # 3. Create a GitHub Release with notes
+        # 4. Commit and push the changes back to master
+        run: pnpm nx release --yes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }} # Uncomment if publishing libraries to NPM registry
+
+
+
+=== START OF FILE: .github\workflows\stale.yml ===
+
+name: Close Stale Issues
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Runs every day at 2 AM
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-stale: 30
+          days-before-close: 7
+          stale-issue-message: 'This issue has been automatically marked as stale because it has not had recent activity. It will be closed in 7 days if no further activity occurs.'
+          stale-issue-label: 'stale'
+          close-issue-message: 'This issue was closed because it has been stalled for 7 days with no activity.'
+
+
+=== START OF FILE: apps\auth-api\src\main.ts ===
+
+/**
+ * This is not a production server yet!
+ * This is only a minimal backend to get started.
+ */
+
+import { Logger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app/app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  const globalPrefix = 'api';
+  app.setGlobalPrefix(globalPrefix);
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  Logger.log(
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+  );
+}
+
+bootstrap();
+
+
+
+=== START OF FILE: apps\auth-api\src\app\app.controller.ts ===
+
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getData() {
+    return this.appService.getData();
+  }
+}
+
+
+
+=== START OF FILE: apps\auth-api\src\app\app.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+
+
+
+=== START OF FILE: apps\auth-api\src\app\app.service.ts ===
+
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getData(): { message: string } {
+    return { message: 'Hello API' };
+  }
+}
+
+
+
+=== START OF FILE: apps\social-api\src\main.ts ===
+
+/**
+ * This is not a production server yet!
+ * This is only a minimal backend to get started.
+ */
+
+import { Logger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app/app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  const globalPrefix = 'api';
+  app.setGlobalPrefix(globalPrefix);
+  const port = process.env.PORT || 3002;
+  await app.listen(port);
+  Logger.log(
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+  );
+}
+
+bootstrap();
+
+
+
+=== START OF FILE: apps\social-api\src\app\app.controller.ts ===
+
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getData() {
+    return this.appService.getData();
+  }
+}
+
+
+
+=== START OF FILE: apps\social-api\src\app\app.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { CacheModule } from '@nestjs/cache-manager';
+import { redisStore } from 'cache-manager-redis-yet';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { PostsModule } from './posts/posts.module';
+
+const redisUrl = new URL(process.env.REDIS_URL || 'redis://localhost:6379');
+
+@Module({
+  imports: [
+    BullModule.forRoot({
+      connection: {
+        host: redisUrl.hostname,
+        port: Number(redisUrl.port),
+        password: redisUrl.password || undefined,
+        tls: redisUrl.protocol === 'rediss:' ? { rejectUnauthorized: false } : undefined,
+      },
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: async () => ({
+        store: await redisStore({ url: process.env.REDIS_URL || 'redis://localhost:6379' }),
+      }),
+    }),
+    PostsModule, // <-- The Posts module you just moved!
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+
+
+=== START OF FILE: apps\social-api\src\app\app.service.ts ===
+
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getData(): { message: string } {
+    return { message: 'Hello API' };
+  }
+}
+
+
+
+=== START OF FILE: apps\social-api\src\app\cloudinary.service.ts ===
+
+// apps/core-api/src/app/cloudinary.service.ts
+import { Injectable, Logger } from '@nestjs/common';
+import { v2 as cloudinary } from 'cloudinary';
+
+@Injectable()
+export class CloudinaryService {
+  private readonly logger = new Logger(CloudinaryService.name);
+
+  constructor() {
+    // This connects to Cloudinary using your .env variables!
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+    this.logger.log('Cloudinary successfully initialized ☁️');
+  }
+
+  // A reusable function to upload any image or video!
+  async uploadFile(
+    filePath: string,
+    folder = 'hellokitty_posts',
+  ): Promise<string> {
+    try {
+      const result = await cloudinary.uploader.upload(filePath, {
+        folder: folder,
+        resource_type: 'auto', // Automatically detects if it's an image or video
+      });
+      return result.secure_url;
+    } catch (error) {
+      this.logger.error('Failed to upload file to Cloudinary', error);
+      throw new Error('Media upload failed');
+    }
+  }
+}
+
+
+
+=== START OF FILE: apps\social-api\src\app\filters\global-exception.filter.ts ===
+
+// apps/core-api/src/app/filters/global-exception.filter.ts
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(GlobalExceptionFilter.name);
+
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+    const request = ctx.getRequest();
+
+    // Determine if it's a known HTTP error, or a random crash
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const message =
+      exception instanceof HttpException
+        ? exception.message
+        : 'An unexpected error occurred on the server.';
+
+    // 1. Log the hardcore technical error to our server terminal (for us to debug)
+    const stack = exception instanceof Error ? exception.stack : '';
+    this.logger.error(
+      `[${request.method}] ${request.url} - ${status} - ${message}`,
+      stack,
+    );
+
+    // 2. Send a beautifully formatted, safe response to the Next.js Frontend
+    response.status(status).json({
+      success: false,
+      error: message,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+    });
+  }
+}
+
+
+
+=== START OF FILE: apps\social-api\src\app\posts\posts.controller.ts ===
+
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { PostsService } from './posts.service';
+import 'multer'; // Tells TypeScript to load the Multer types
+
+@Controller('posts')
+export class PostsController {
+  constructor(private readonly postsService: PostsService) {}
+
+  @Post()
+  @UseInterceptors(FileInterceptor('file'))
+  create(
+    // ✨ Replaced 'any' with a strict Type!
+    @Body() body: { content?: string; authorId: string },
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.postsService.createPost(
+      {
+        content: body.content,
+        authorId: body.authorId,
+      },
+      file,
+    );
+  }
+
+  @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey('global_feed')
+  @CacheTTL(10000) // 10 seconds
+  findAll() {
+    return this.postsService.findAll();
+  }
+}
+
+
+
+=== START OF FILE: apps\social-api\src\app\posts\posts.module.ts ===
+
+// apps/core-api/src/app/posts/posts.module.ts
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { MulterModule } from '@nestjs/platform-express';
+import { PostsService } from './posts.service';
+import { PostsController } from './posts.controller';
+import { CloudinaryService } from '../cloudinary.service';
+import { PrismaService } from '@hellokitty/social/data-access';
+import { PostsWorker } from './posts.worker';
+
+@Module({
+  imports: [
+    // 1. Create a Redis Queue named 'media-upload'
+    BullModule.registerQueue({
+      name: 'media-upload',
+    }),
+    // 2. Tell Multer to save uploaded files to a temp folder
+    MulterModule.register({
+      dest: './tmp/uploads',
+    }),
+  ],
+  controllers: [PostsController],
+  providers: [PostsService, CloudinaryService, PrismaService, PostsWorker],
+})
+export class PostsModule {}
+
+
+
+=== START OF FILE: apps\social-api\src\app\posts\posts.service.ts ===
+
+// apps/core-api/src/app/posts/posts.service.ts
+import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import 'multer';
+
+// 1. Get PrismaService from your custom Nx library
+import { PrismaService } from '@hellokitty/social/data-access';
+// 2. Get the generated types (MediaType) directly from the client
+import { MediaType } from '@prisma/client-social';
+
+@Injectable()
+export class PostsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    // Notice we removed CloudinaryService here! Only the Worker needs it now.
+    @InjectQueue('media-upload') private readonly mediaQueue: Queue,
+  ) {}
+
+  async createPost(
+    data: { content?: string; authorId: string },
+    file?: Express.Multer.File,
+  ) {
+    const isVideo = file?.mimetype.startsWith('video') || false;
+
+    // 1. Save to DB INSTANTLY (Notice mediaUrl is null for now)
+    const post = await this.prisma.post.create({
+      data: {
+        content: data.content,
+        mediaType: file
+          ? isVideo
+            ? MediaType.VIDEO
+            : MediaType.IMAGE
+          : MediaType.TEXT,
+        authorId: data.authorId,
+      },
+    });
+
+    // 2. If there is a file, drop it into the Redis Queue!
+    if (file) {
+      await this.mediaQueue.add('upload-job', {
+        postId: post.id,
+        filePath: file.path,
+        isVideo,
+      });
+    }
+
+    // 3. Return the post immediately to the user! Lightning fast ⚡
+    return post;
+  }
+
+  findAll() {
+    return this.prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { author: true },
+    });
+  }
+}
+
+
+
+=== START OF FILE: apps\social-api\src\app\posts\posts.worker.ts ===
+
+// apps/core-api/src/app/posts/posts.worker.ts
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Logger } from '@nestjs/common';
+import { Job } from 'bullmq';
+import { PrismaService } from '@hellokitty/social/data-access';
+import { CloudinaryService } from '../cloudinary.service';
+import * as fs from 'fs/promises';
+
+@Processor('media-upload') // Listens to the exact queue we registered
+export class PostsWorker extends WorkerHost {
+  private readonly logger = new Logger(PostsWorker.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {
+    super();
+  }
+
+  // This function runs automatically whenever a new job hits Redis
+  async process(
+    job: Job<{ postId: string; filePath: string; isVideo: boolean }>,
+  ) {
+    this.logger.log(`👷 Processing media for Post ${job.data.postId}...`);
+
+    try {
+      // 1. Upload the temp file to Cloudinary
+      const url = await this.cloudinary.uploadFile(job.data.filePath);
+
+      // 2. Update the database with the final Cloudinary URL
+      await this.prisma.post.update({
+        where: { id: job.data.postId },
+        data: { mediaUrl: url },
+      });
+
+      // 3. Delete the temporary file from our disk to save space
+      await fs.unlink(job.data.filePath);
+
+      this.logger.log(
+        `✅ Successfully processed media for Post ${job.data.postId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `❌ Failed to process media for Post ${job.data.postId}`,
+        error,
+      );
+      throw error; // BullMQ will automatically retry the job later if it fails!
+    }
+  }
+}
+
+
+
+=== START OF FILE: apps\web\index.d.ts ===
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare module '*.svg' {
+  const content: any;
+  export const ReactComponent: any;
+  export default content;
+}
+
+
+
+=== START OF FILE: apps\web\next-env.d.ts ===
+
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+import "./.next/dev/types/routes.d.ts";
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+
+
+
+=== START OF FILE: apps\web\src\app\layout.tsx ===
+
+import './global.css';
+
+export const metadata = {
+  title: 'Welcome to web',
+  description: 'Generated by create-nx-workspace',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+
+
+
+=== START OF FILE: apps\web\src\app\page.tsx ===
+
+// apps/web/src/app/page.tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Post } from '@hellokitty/types'; // ✨ Import the strict type from our shared library!
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL is not defined');
+
+export default function Feed() {
+  // ✨ Replace 'any[]' with 'Post[]'
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [content, setContent] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch(`${API_URL}/posts`);
+      if (!res.ok) throw new Error('Failed to fetch posts');
+      const data = await res.json();
+      setPosts(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('authorId', 'test-user-id');
+    if (file) {
+      formData.append('file', file);
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/posts`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to create post');
+      }
+
+      setContent('');
+      setFile(null);
+      fetchPosts();
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('Error creating post. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto p-4 font-sans text-gray-800">
+      <h1 className="text-3xl font-bold mb-6">Internal Feed</h1>
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-4 rounded-xl shadow-md border mb-8"
+      >
+        <textarea
+          className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 mb-4"
+          placeholder="What's happening?"
+          rows={3}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+        <div className="flex justify-between items-center">
+          <input
+            type="file"
+            accept="image/*,video/*"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="text-sm text-gray-500"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-black text-white px-6 py-2 rounded-full font-bold disabled:opacity-50"
+          >
+            {loading ? 'Processing...' : 'Publish'}
+          </button>
+        </div>
+      </form>
+
+      <div className="space-y-6">
+        {posts.map((post) => (
+          <div
+            key={post.id}
+            className="bg-white p-4 rounded-xl shadow-sm border"
+          >
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold mr-3">
+                {post.author?.displayName?.[0] || 'U'}
+              </div>
+              <div>
+                <h3 className="font-bold">{post.author?.displayName}</h3>
+                <p className="text-sm text-gray-500">
+                  @{post.author?.username}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-lg mb-4">{post.content}</p>
+
+            {post.mediaUrl && (
+              <div className="rounded-xl overflow-hidden mb-4 bg-gray-100">
+                {post.mediaType === 'VIDEO' ? (
+                  <video
+                    src={post.mediaUrl}
+                    controls
+                    className="w-full max-h-96 object-contain"
+                  />
+                ) : (
+                  <img
+                    src={post.mediaUrl}
+                    alt="Media"
+                    className="w-full max-h-96 object-contain"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
+=== START OF FILE: apps\web\src\app\api\hello\route.ts ===
+
+export async function GET(request: Request) {
+  return new Response('Hello, from API!');
+}
+
+
+
+=== START OF FILE: libs\iam\data-access\prisma\schema.prisma ===
+
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/@prisma/client-iam"
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  users     User[]
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id           String    @id @default(uuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  email        String    @unique
+  passwordHash String
+  mfaSecret    String?
+  
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+
+=== START OF FILE: libs\iam\data-access\src\index.ts ===
+
+export * from './lib/data-access';
+
+
+
+=== START OF FILE: libs\iam\data-access\src\lib\data-access.ts ===
+
+export function dataAccess(): string {
+  return 'data-access';
+}
+
+
+
+=== START OF FILE: libs\iam\feature-auth\src\index.ts ===
+
+export * from './lib/feature-auth';
+
+
+
+=== START OF FILE: libs\iam\feature-auth\src\lib\feature-auth.ts ===
+
+export function featureAuth(): string {
+  return 'feature-auth';
+}
+
+
+
+=== START OF FILE: libs\iam\feature-mfa\src\index.ts ===
+
+export * from './lib/feature-mfa';
+
+
+
+=== START OF FILE: libs\iam\feature-mfa\src\lib\feature-mfa.ts ===
+
+export function featureMfa(): string {
+  return 'feature-mfa';
+}
+
+
+
+=== START OF FILE: libs\iam\utils-crypto\src\index.ts ===
+
+export * from './lib/utils-crypto';
+
+
+
+=== START OF FILE: libs\iam\utils-crypto\src\lib\utils-crypto.ts ===
+
+export function utilsCrypto(): string {
+  return 'utils-crypto';
+}
+
+
+
+=== START OF FILE: libs\social\data-access\prisma\schema.prisma ===
+
+datasource db {
+  provider = "mongodb"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/@prisma/client-social" 
+}
+
+enum MediaType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
+model UserProfile {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique // ✨ FIX: Standard String to hold the Postgres UUID!
+  username    String   @unique
+  displayName String?
+  avatarUrl   String?
+  posts       Post[]
+}
+
+model Post {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  content     String?
+  mediaUrl    String?
+  mediaType   MediaType @default(TEXT)
+  
+  // ✨ FIX: Must be an ObjectId to link to UserProfile internally
+  authorId    String    @db.ObjectId
+  author      UserProfile @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+}
+
+
+=== START OF FILE: libs\social\data-access\src\index.ts ===
+
+export * from './lib/social-data-access';
+export * from './lib/prisma.service';
+
+
+=== START OF FILE: libs\social\data-access\src\lib\prisma.service.ts ===
+
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client-social';
+
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+  async onModuleInit() {
+    await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+}
+
+
+=== START OF FILE: libs\social\data-access\src\lib\social-data-access.ts ===
+
+export function socialDataAccess(): string {
+  return 'social-data-access';
+}
+
+
+
+=== START OF FILE: libs\types\src\index.ts ===
+
+// libs/types/src/index.ts
+
+export interface AuthUser {
+  id: string; // Postgres UUID
+  tenantId: string;
+  email: string;
+}
+
+export interface SocialProfile {
+  id: string; // Mongo ObjectId
+  userId: string; // Links back to AuthUser.id
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
+export type MediaType = 'TEXT' | 'IMAGE' | 'VIDEO';
+
+export interface Post {
+  id: string;
+  content: string | null;
+  mediaUrl: string | null;
+  mediaType: MediaType;
+  authorId: string;
+  author?: SocialProfile;
+  createdAt: Date;
+}
+
+
+=== START OF FILE: libs\types\src\lib\types.ts ===
+
+export function types(): string {
+  return 'types';
+}
+

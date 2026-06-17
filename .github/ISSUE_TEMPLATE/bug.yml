@@ -1,0 +1,31 @@
+name: 🐛 Bug Report
+description: Report a bug in the HelloKitty platform
+title: "[BUG] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for taking the time to report this! Please fill out the form below."
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Which environment?
+      options:
+        - auth-api
+        - social-api
+        - web (Next.js frontend)
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How to reproduce?
+      description: What exactly did you click or type to make this crash?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Paste any red errors from your terminal or browser console here.
+      render: shell

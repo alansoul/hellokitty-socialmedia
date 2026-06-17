@@ -1,0 +1,9 @@
+{
+  "name": "iam-feature-mfa",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/iam/feature-mfa/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project feature-mfa --web",
+  "targets": {}
+}

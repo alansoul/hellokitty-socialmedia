@@ -1,27 +1,36 @@
-_format_version: "3.0"
+_format_version: '3.0'
 
 services:
-  # 1. Our NestJS Core Monolith
-  - name: core-api-service
-    # host.docker.internal lets Kong (inside Docker) talk to NestJS (running on your Windows host)
-    url: http://host.docker.internal:3000
+  # -----------------------------------------------------
+  # 1. AUTH DOMAIN (Identity, Login, MFA)
+  # -----------------------------------------------------
+  - name: auth-api-service
+    # host.docker.internal points back to your Windows machine (Port 3001)
+    url: http://host.docker.internal:3001
     routes:
-      - name: core-api-routes
+      - name: auth-routes
         paths:
-          - /api
+          - /api/auth     # All login/signup requests go here
+        strip_path: false # Keeps the '/api/auth' prefix when sending to NestJS
 
-  # ✨ ENTERPRISE ADDITION: Global Plugins
+  # -----------------------------------------------------
+  # 2. SOCIAL DOMAIN (Posts, Likes, Comments, Profiles)
+  # -----------------------------------------------------
+  - name: social-api-service
+    # host.docker.internal points back to your Windows machine (Port 3002)
+    url: http://host.docker.internal:3002
+    routes:
+      - name: social-routes
+        paths:
+          - /api/posts    # The posts controller we just moved!
+          - /api/profiles # For user social profiles
+          - /api/comments # For post comments
+        strip_path: false
+
+# ✨ ENTERPRISE ADDITION: Global Plugins
 plugins:
   - name: rate-limiting
     config:
-      minute: 60
+      minute: 100        # Allow 100 requests per minute per user
       policy: local
       fault_tolerant: true
-
-  # (Later, we will add our Python AI Service here!)
-  # - name: python-ai-service
-  #   url: http://host.docker.internal:5000
-  #   routes:
-  #     - name: ai-routes
-  #       paths:
-  #         - /api/recommendations

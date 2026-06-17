@@ -1,0 +1,9 @@
+1. module vs moduleResolution (Why CommonJS?)
+There are two different settings in TypeScript that look similar but do very different things:
+"module" (The Output): This tells TypeScript what JavaScript format to compile your code into.
+NestJS (which powers your social-api) heavily relies on decorators and reflection. Historically, NestJS is designed to compile to "commonjs".
+If you change "module" to "NodeNext", TypeScript compiles it to native ESM. This means Node.js will strictly require you to add .js to the end of every single import in your codebase (e.g., import { AppService } from './app.service.js'). That is highly annoying, which is why most NestJS apps stick to "commonjs".
+"moduleResolution" (The Lookup): This tells TypeScript how to find files when you write an import.
+"NodeNext" enforces strict extension rules (forces you to write .js).
+"bundler" is the modern gold standard for Nx and Webpack. It gives you all the modern ES features, understands package.json "exports", but does not force you to type .js at the end of your files.
+My Recommendation: Use "module": "commonjs" (so NestJS doesn't break) and "moduleResolution": "bundler" (so you get modern, strict resolution without the .js headache).

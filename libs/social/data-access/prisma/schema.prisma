@@ -1,0 +1,38 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGO_URL") 
+}
+
+generator client {
+  provider = "prisma-client-js"
+  // ✨ Back to its own standalone folder!
+  output   = "../../../../node_modules/@prisma/client-social" 
+}
+
+enum MediaType {
+  TEXT
+  IMAGE
+  VIDEO
+}
+
+model UserProfile {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique // ✨ FIX: Standard String to hold the Postgres UUID!
+  username    String   @unique
+  displayName String?
+  avatarUrl   String?
+  posts       Post[]
+}
+
+model Post {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  content     String?
+  mediaUrl    String?
+  mediaType   MediaType @default(TEXT)
+  
+  // ✨ FIX: Must be an ObjectId to link to UserProfile internally
+  authorId    String    @db.ObjectId
+  author      UserProfile @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime  @default(now())
+}

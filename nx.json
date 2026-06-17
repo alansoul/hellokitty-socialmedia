@@ -22,7 +22,7 @@
       "options": {
         "startTargetName": "start",
         "buildTargetName": "build",
-        "devTargetName": "dev",
+        "devTargetName": "serve",
         "serveStaticTargetName": "serve-static",
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
@@ -39,7 +39,14 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/core-api-e2e/**/*"]
+      "exclude": [
+        "apps/core-api-e2e/**/*",
+        "apps/auth-api-e2e/**/*",
+        "auth-api-e2e/**/*",
+        "social-api-e2e/**/*",
+        "apps/auth-api-e2e/**/*",
+        "apps/social-api-e2e/**/*"
+      ]
     },
     {
       "plugin": "@nx/webpack/plugin",
@@ -75,7 +82,6 @@
       "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"],
       "cache": true
     },
-
     "@nx/js:tsc": {
       "cache": true,
       "dependsOn": ["^build"],
