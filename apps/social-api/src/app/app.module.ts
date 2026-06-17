@@ -20,7 +20,10 @@ const redisUrl = new URL(REDIS_URL_STRING);
         port: Number(redisUrl.port),
         password: redisUrl.password || undefined,
         // If the URL starts with rediss://, it enables secure TLS
-        tls: redisUrl.protocol === 'rediss:' ? { rejectUnauthorized: false } : undefined,
+        tls:
+          redisUrl.protocol === 'rediss:'
+            ? { rejectUnauthorized: false }
+            : undefined,
       },
     }),
 
