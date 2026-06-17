@@ -6,7 +6,7 @@ services:
     region: ohio
     plan: free
     # Generate the IAM Postgres Client, then build auth-api
-    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && npx prisma generate --schema=libs/iam/data-access/prisma/schema.prisma && pnpm nx build auth-api
+    buildCommand: "pnpm install --frozen-lockfile && npx prisma generate --schema=libs/iam/data-access/prisma/schema.prisma && pnpm nx build auth-api"
     startCommand: node dist/apps/auth-api/main.js
     envVars:
       - key: NODE_ENV
@@ -21,7 +21,7 @@ services:
     region: ohio
     plan: free
     # Generate the Social Mongo Client, then build social-api
-    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && npx prisma generate --schema=libs/social/data-access/prisma/schema.prisma && pnpm nx build social-api
+    buildCommand: "pnpm install --frozen-lockfile && npx prisma generate --schema=libs/social/data-access/prisma/schema.prisma && pnpm nx build social-api"
     startCommand: node dist/apps/social-api/main.js
     envVars:
       - key: NODE_ENV
