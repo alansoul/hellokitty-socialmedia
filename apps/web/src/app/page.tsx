@@ -2,13 +2,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Post } from '@hellokitty/types'; // ✨ Import the strict type from our shared library!
+import { Post } from '@hellokitty/types'; 
 
-// Provide a safe fallback so cloud builds (GitHub/Vercel) don't crash
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
+// ✨ Dynamic URL with a safe fallback for cloud builds
+const SOCIAL_API = process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
 
 export default function Feed() {
-  // ✨ Replace 'any[]' with 'Post[]'
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -16,8 +15,8 @@ export default function Feed() {
 
   const fetchPosts = async () => {
     try {
-      // ✨ MAKE SURE THIS IS THE FULL URL TO YOUR SOCIAL API (Port 3002)
-      const response = await fetch('http://localhost:3002/api/posts');
+      // ✨ Use the dynamic SOCIAL_API variable instead of hardcoded localhost
+      const response = await fetch(`${SOCIAL_API}/posts`);
 
       if (!response.ok) {
         throw new Error('Failed to fetch posts');
@@ -46,7 +45,8 @@ export default function Feed() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/posts`, {
+      // ✨ Use the dynamic SOCIAL_API variable here too!
+      const res = await fetch(`${SOCIAL_API}/posts`, {
         method: 'POST',
         body: formData,
       });
