@@ -24,8 +24,12 @@
       "@hellokitty/feature-auth": ["./libs/iam/feature-auth/src/index.ts"],
       "@hellokitty/feature-mfa": ["./libs/iam/feature-mfa/src/index.ts"],
       "@hellokitty/utils-crypto": ["./libs/iam/utils-crypto/src/index.ts"],
-      "@hellokitty/social/data-access": ["./libs/social/data-access/src/index.ts"],
-      "@prisma/client/social": ["./node_modules/@prisma/client/social/index.d.ts"]
+      "@hellokitty/social/data-access": [
+        "./libs/social/data-access/src/index.ts"
+      ],
+      "@prisma/client/social": [
+        "./node_modules/@prisma/client/social/index.d.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]

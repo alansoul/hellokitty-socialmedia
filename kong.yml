@@ -10,7 +10,7 @@ services:
     routes:
       - name: auth-routes
         paths:
-          - /api/auth     # All login/signup requests go here
+          - /api/auth # All login/signup requests go here
         strip_path: false # Keeps the '/api/auth' prefix when sending to NestJS
 
   # -----------------------------------------------------
@@ -22,7 +22,7 @@ services:
     routes:
       - name: social-routes
         paths:
-          - /api/posts    # The posts controller we just moved!
+          - /api/posts # The posts controller we just moved!
           - /api/profiles # For user social profiles
           - /api/comments # For post comments
         strip_path: false
@@ -31,6 +31,6 @@ services:
 plugins:
   - name: rate-limiting
     config:
-      minute: 100        # Allow 100 requests per minute per user
+      minute: 100 # Allow 100 requests per minute per user
       policy: local
       fault_tolerant: true

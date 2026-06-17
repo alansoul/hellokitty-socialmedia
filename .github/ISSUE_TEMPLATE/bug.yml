@@ -1,11 +1,11 @@
 name: 🐛 Bug Report
 description: Report a bug in the HelloKitty platform
-title: "[BUG] "
-labels: ["bug", "triage"]
+title: '[BUG] '
+labels: ['bug', 'triage']
 body:
   - type: markdown
     attributes:
-      value: "Thanks for taking the time to report this! Please fill out the form below."
+      value: 'Thanks for taking the time to report this! Please fill out the form below.'
   - type: dropdown
     id: environment
     attributes:

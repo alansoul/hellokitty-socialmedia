@@ -4,7 +4,5 @@
   "sourceRoot": "libs/social/data-access/src",
   "projectType": "library",
   "tags": [],
-  "targets": {
-
-  }
+  "targets": {}
 }

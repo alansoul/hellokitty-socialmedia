@@ -11,10 +11,10 @@ updates:
     labels:
       - 'dependencies'
 
-  # Maintain Docker images (Postgres, Redis, Kong)
-  - package-ecosystem: 'docker'
-    directory: '/'
-    schedule:
-      interval: 'monthly'
-    commit-message:
-      prefix: 'chore(docker)'
+  # # Maintain Docker images (Postgres, Redis, Kong)
+  # - package-ecosystem: 'docker'
+  #   directory: '/'
+  #   schedule:
+  #     interval: 'monthly'
+  #   commit-message:
+  #     prefix: 'chore(docker)'

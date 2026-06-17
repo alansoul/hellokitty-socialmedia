@@ -9,8 +9,8 @@ import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-   // ✨ FIX 1: Enable CORS so Next.js (port 3000) can fetch data
+
+  // ✨ FIX 1: Enable CORS so Next.js (port 3000) can fetch data
   app.enableCors({
     origin: 'http://localhost:3000', // Allow your web app
     credentials: true,

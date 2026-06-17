@@ -50,7 +50,7 @@ export class PostsService {
   }
 
   findAll() {
-     return this.prisma.post.findMany({
+    return this.prisma.post.findMany({
       orderBy: { createdAt: 'desc' },
       include: { author: true },
     });

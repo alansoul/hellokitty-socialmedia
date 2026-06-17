@@ -9,7 +9,7 @@ module.exports = {
       devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     }),
   },
-   // ✨ THE FIX FOR AUTH API
+  // ✨ THE FIX FOR AUTH API
   externals: {
     '@prisma/client-iam': 'commonjs @prisma/client-iam',
   },

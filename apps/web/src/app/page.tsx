@@ -14,21 +14,21 @@ export default function Feed() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
- const fetchPosts = async () => {
-  try {
-    // ✨ MAKE SURE THIS IS THE FULL URL TO YOUR SOCIAL API (Port 3002)
-    const response = await fetch('http://localhost:3002/api/posts');
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch posts');
+  const fetchPosts = async () => {
+    try {
+      // ✨ MAKE SURE THIS IS THE FULL URL TO YOUR SOCIAL API (Port 3002)
+      const response = await fetch('http://localhost:3002/api/posts');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch posts');
+      }
+
+      const data = await response.json();
+      setPosts(data);
+    } catch (error) {
+      console.error(error);
     }
-    
-    const data = await response.json();
-    setPosts(data);
-  } catch (error) {
-    console.error(error);
-  }
-};
+  };
 
   useEffect(() => {
     fetchPosts();

@@ -15,13 +15,18 @@ const redisUrl = new URL(process.env.REDIS_URL || 'redis://localhost:6379');
         host: redisUrl.hostname,
         port: Number(redisUrl.port),
         password: redisUrl.password || undefined,
-        tls: redisUrl.protocol === 'rediss:' ? { rejectUnauthorized: false } : undefined,
+        tls:
+          redisUrl.protocol === 'rediss:'
+            ? { rejectUnauthorized: false }
+            : undefined,
       },
     }),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: async () => ({
-        store: await redisStore({ url: process.env.REDIS_URL || 'redis://localhost:6379' }),
+        store: await redisStore({
+          url: process.env.REDIS_URL || 'redis://localhost:6379',
+        }),
       }),
     }),
     PostsModule, // <-- The Posts module you just moved!
