@@ -45,7 +45,9 @@
         "auth-api-e2e/**/*",
         "social-api-e2e/**/*",
         "apps/auth-api-e2e/**/*",
-        "apps/social-api-e2e/**/*"
+        "apps/social-api-e2e/**/*",
+        "apps/worker-e2e/**/*",
+        "apps/realtime-api-e2e/**/*"
       ]
     },
     {
@@ -65,6 +67,11 @@
       "application": {
         "style": "tailwind",
         "linter": "eslint"
+      }
+    },
+    "@nx/react": {
+      "library": {
+        "unitTestRunner": "jest"
       }
     }
   },

@@ -1,6 +1,6 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") // ✨ Connects to NeonDB
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -8,73 +8,152 @@ generator client {
   output   = "../../../../node_modules/@prisma/client-iam"
 }
 
-enum UserStatus {
-  PENDING
-  ACTIVE
-  LOCKED
-  SUSPENDED
-}
-
+// -----------------------------------------------------------------------------
+// 1. TENANTS & APPLICATIONS (CLIENTS)
+// -----------------------------------------------------------------------------
 model Tenant {
-  id          String    @id @default(uuid()) @db.Uuid
-  name        String    @db.VarChar(255)
-  slug        String    @unique @db.VarChar(100)
-  isActive    Boolean   @default(true) @map("is_active")
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(255)
+  region        String   @default("us-east-1")
+  customDomain  String?  @map("custom_domain") @db.VarChar(255)
   
-  users       User[]
-  
-  // Audit Trails
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  
-  @@map("tenants") // Standardize table name to lowercase plural
+  applications  Application[]
+  users         User[]
+  organizations Organization[]
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("tenants")
 }
 
-model User {
-  id                    String     @id @default(uuid()) @db.Uuid
-  tenantId              String     @db.Uuid @map("tenant_id")
-  tenant                Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+model Application {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid @map("tenant_id")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   
-  email                 String     @unique @db.VarChar(255)
-  passwordHash          String     @map("password_hash")
+  name           String
+  type           String   // SPA, NATIVE, REGULAR_WEB, M2M
+  clientId       String   @unique @map("client_id")
+  clientSecret   String?  @map("client_secret")
   
-  // Identity
-  firstName             String?    @map("first_name") @db.VarChar(100)
-  lastName              String?    @map("last_name") @db.VarChar(100)
-  
-  // Security & Access Control
-  status                UserStatus @default(PENDING)
-  mfaEnabled            Boolean    @default(false) @map("mfa_enabled")
-  mfaSecret             String?    @map("mfa_secret")
-  failedLoginAttempts   Int        @default(0) @map("failed_login_attempts")
-  lockedUntil           DateTime?  @map("locked_until")
-  passwordChangedAt     DateTime?  @map("password_changed_at")
-  lastLoginAt           DateTime?  @map("last_login_at")
-  
-  sessions              Session[]
-  
-  // Audit Trails
-  createdAt             DateTime   @default(now()) @map("created_at")
-  updatedAt             DateTime   @updatedAt @map("updated_at")
-  deletedAt             DateTime?  @map("deleted_at") // For Soft Deletes
+  // Security & OAuth
+  authMethod     String   @default("client_secret_post") @map("auth_method")
+  pkceRequired   Boolean  @default(true) @map("pkce_required")
+  allowedOrigins String[] @map("allowed_origins")
+  redirectUris   String[] @map("redirect_uris")
 
-  // Fast lookups for authentication
-  @@index([tenantId, email])
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("applications")
+}
+
+// -----------------------------------------------------------------------------
+// 2. USERS, IDENTITIES & CREDENTIALS
+// -----------------------------------------------------------------------------
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid @map("tenant_id")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  email          String   @db.VarChar(255)
+  emailVerified  Boolean  @default(false) @map("email_verified")
+  status         String   @default("ACTIVE") // ACTIVE, BLOCKED, PENDING
+  
+  identities     Identity[]
+  credentials    Credential[]
+  mfaFactors     MfaFactor[]
+  sessions       Session[]
+  memberships    Membership[]
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, email]) // Users are isolated per tenant
   @@map("users")
 }
 
+model Identity {
+  id               String @id @default(uuid()) @db.Uuid
+  userId           String @db.Uuid @map("user_id")
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  provider         String // google-oauth2, github, auth0 (database)
+  providerUserId   String @map("provider_user_id")
+  
+  @@unique([provider, providerUserId])
+  @@map("identities")
+}
+
+model Credential {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid @map("user_id")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type           String    // PASSWORD, PASSKEY
+  passwordHash   String?   @map("password_hash")
+  rotatedAt      DateTime? @map("rotated_at")
+
+  @@map("credentials")
+}
+
+model MfaFactor {
+  id             String  @id @default(uuid()) @db.Uuid
+  userId         String  @db.Uuid @map("user_id")
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type           String  // TOTP, SMS, RECOVERY_CODE
+  secret         String? 
+  verified       Boolean @default(false)
+
+  @@map("mfa_factors")
+}
+
+// -----------------------------------------------------------------------------
+// 3. B2B ORGANIZATIONS & RBAC
+// -----------------------------------------------------------------------------
+model Organization {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid @map("tenant_id")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name           String
+  displayName    String?  @map("display_name")
+  
+  memberships    Membership[]
+
+  @@map("organizations")
+}
+
+model Membership {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @db.Uuid @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  organizationId String       @db.Uuid @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  role           String       // ADMIN, MEMBER
+
+  @@unique([userId, organizationId])
+  @@map("memberships")
+}
+
+// -----------------------------------------------------------------------------
+// 4. SESSIONS & TOKENS (OIDC)
+// -----------------------------------------------------------------------------
 model Session {
-  id           String   @id @default(uuid()) @db.Uuid
-  sessionToken String   @unique @map("session_token")
-  userId       String   @db.Uuid @map("user_id")
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Security tracking
-  ipAddress    String?  @map("ip_address") @db.Inet // Postgres specific IP type
-  userAgent    String?  @map("user_agent")
+  sessionToken   String   @unique @map("session_token")
+  ipAddress      String?  @map("ip_address") @db.Inet
+  userAgent      String?  @map("user_agent")
   
-  expires      DateTime
-  createdAt    DateTime @default(now()) @map("created_at")
+  expiresAt      DateTime @map("expires_at")
+  revoked        Boolean  @default(false)
 
   @@index([userId])
   @@map("sessions")

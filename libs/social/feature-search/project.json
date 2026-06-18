@@ -1,0 +1,9 @@
+{
+  "name": "social-feature-search",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/social/feature-search/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project social-feature-search --web",
+  "targets": {}
+}

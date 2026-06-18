@@ -29,6 +29,62 @@
       ],
       "@prisma/client/social": [
         "./node_modules/@prisma/client/social/index.d.ts"
+      ],
+      "@hellokitty/shared-ui": ["./libs/shared/ui/src/index.ts"],
+      "@hellokitty/shared-config": ["./libs/shared/config/src/index.ts"],
+      "@hellokitty/iam-domain": ["./libs/iam/domain/src/index.ts"],
+      "@hellokitty/social-domain": ["./libs/social/domain/src/index.ts"],
+      "@hellokitty/iam-ui": ["./libs/iam/ui/src/index.ts"],
+      "@hellokitty/social-ui": ["./libs/social/ui/src/index.ts"],
+      "@hellokitty/iam-feature-users": [
+        "./libs/iam/feature-users/src/index.ts"
+      ],
+      "@hellokitty/social-feature-feed": [
+        "./libs/social/feature-feed/src/index.ts"
+      ],
+      "@hellokitty/social-feature-profiles": [
+        "./libs/social/feature-profiles/src/index.ts"
+      ],
+      "@hellokitty/social-feature-comments": [
+        "./libs/social/feature-comments/src/index.ts"
+      ],
+      "@hellokitty/iam-feature-sessions": [
+        "./libs/iam/feature-sessions/src/index.ts"
+      ],
+      "@hellokitty/iam-feature-security": [
+        "./libs/iam/feature-security/src/index.ts"
+      ],
+      "@hellokitty/social-feature-posts": ["./libs/social/feature-posts/src/index.ts"],
+      "@hellokitty/iam-feature-logs": ["./libs/iam/feature-logs/src/index.ts"],
+      "@hellokitty/shared-logger": ["./libs/shared/logger/src/index.ts"],
+      "@hellokitty/shared-errors": ["./libs/shared/errors/src/index.ts"],
+      "@hellokitty/shared-cache": ["./libs/shared/cache/src/index.ts"],
+      "@hellokitty/shared-queues": ["./libs/shared/queues/src/index.ts"],
+      "@hellokitty/shared-mail": ["./libs/shared/mail/src/index.ts"],
+      "@hellokitty/shared-storage": ["./libs/shared/storage/src/index.ts"],
+      "@hellokitty/shared-validation": [
+        "./libs/shared/validation/src/index.ts"
+      ],
+      "@hellokitty/shared-security": ["./libs/shared/security/src/index.ts"],
+      "@hellokitty/iam-feature-oidc": ["./libs/iam/feature-oidc/src/index.ts"],
+      "@hellokitty/shared-sms": ["./libs/shared/sms/src/index.ts"],
+      "@hellokitty/shared-events": ["./libs/shared/events/src/index.ts"],
+      "@hellokitty/iam-feature-passkeys": [
+        "./libs/iam/feature-passkeys/src/index.ts"
+      ],
+      "@hellokitty/social-feature-follows": [
+        "./libs/social/feature-follows/src/index.ts"
+      ],
+      "@hellokitty/iam-feature-sso": ["./libs/iam/feature-sso/src/index.ts"],
+      "@hellokitty/iam-feature-scim": ["./libs/iam/feature-scim/src/index.ts"],
+      "@hellokitty/iam-feature-actions": [
+        "./libs/iam/feature-actions/src/index.ts"
+      ],
+      "@hellokitty/iam-feature-webhooks": [
+        "./libs/iam/feature-webhooks/src/index.ts"
+      ],
+      "@hellokitty/iam-feature-billing": [
+        "./libs/iam/feature-billing/src/index.ts"
       ]
     }
   },

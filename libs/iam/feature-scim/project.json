@@ -1,0 +1,9 @@
+{
+  "name": "iam-feature-scim",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/iam/feature-scim/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project iam-feature-scim --web",
+  "targets": {}
+}
