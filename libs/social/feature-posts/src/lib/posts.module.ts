@@ -5,8 +5,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { PostsController } from './posts.controller';
 import { CloudinaryService } from '@hellokitty/shared-storage';
-import { PrismaService } from '@hellokitty/social/data-access'; 
-
+import { PrismaService } from '@hellokitty/social/data-access';
 
 @Module({
   imports: [

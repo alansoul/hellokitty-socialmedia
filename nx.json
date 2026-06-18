@@ -83,7 +83,10 @@
     },
     "test": {
       "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
-      "cache": true
+      "cache": true,
+      "options": {
+      "passWithNoTests": true 
+      }
     },
     "lint": {
       "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"],

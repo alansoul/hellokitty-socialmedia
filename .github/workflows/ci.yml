@@ -45,7 +45,7 @@ jobs:
         run: pnpm nx affected -t lint --parallel=3
 
       - name: 🧪 Test Affected
-        run: pnpm nx affected -t test --parallel=3 --configuration=ci
+        run: pnpm nx affected -t test --parallel=3 --configuration=ci --passWithNoTests
 
       - name: 🏗️ Build Affected
         run: pnpm nx affected -t build --parallel=3

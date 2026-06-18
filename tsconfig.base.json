@@ -54,7 +54,9 @@
       "@hellokitty/iam-feature-security": [
         "./libs/iam/feature-security/src/index.ts"
       ],
-      "@hellokitty/social-feature-posts": ["./libs/social/feature-posts/src/index.ts"],
+      "@hellokitty/social-feature-posts": [
+        "./libs/social/feature-posts/src/index.ts"
+      ],
       "@hellokitty/iam-feature-logs": ["./libs/iam/feature-logs/src/index.ts"],
       "@hellokitty/shared-logger": ["./libs/shared/logger/src/index.ts"],
       "@hellokitty/shared-errors": ["./libs/shared/errors/src/index.ts"],

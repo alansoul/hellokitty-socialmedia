@@ -1,1 +1,3 @@
-export default function Page() { return <div>apps\web\src\app\(auth-console)\settings</div>; }
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\settings</div>;
+}

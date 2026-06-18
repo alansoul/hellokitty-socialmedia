@@ -17,12 +17,15 @@ const redisUrl = new URL(REDIS_URL_STRING);
         host: redisUrl.hostname,
         port: Number(redisUrl.port),
         password: redisUrl.password || undefined,
-        tls: redisUrl.protocol === 'rediss:' ? { rejectUnauthorized: false } : undefined,
+        tls:
+          redisUrl.protocol === 'rediss:'
+            ? { rejectUnauthorized: false }
+            : undefined,
       },
     }),
   ],
   controllers: [AppController],
   // ✨ Register the worker here!
-  providers: [AppService, PostsWorker, PrismaService, CloudinaryService], 
+  providers: [AppService, PostsWorker, PrismaService, CloudinaryService],
 })
 export class AppModule {}
