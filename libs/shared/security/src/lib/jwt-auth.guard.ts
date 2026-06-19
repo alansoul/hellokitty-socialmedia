@@ -14,17 +14,18 @@ export class JwtAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
-    
+
     if (!token) {
       throw new UnauthorizedException('Missing authentication token');
     }
-    
+
     try {
       // ✨ Verify the token signature using the shared secret
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env['JWT_SECRET'] || 'super-secret-dev-key-change-in-prod',
+        secret:
+          process.env['JWT_SECRET'] || 'super-secret-dev-key-change-in-prod',
       });
-      
+
       // ✨ Attach the user's data (ID, Email, TenantId) directly to the request!
       request['user'] = payload;
     } catch {

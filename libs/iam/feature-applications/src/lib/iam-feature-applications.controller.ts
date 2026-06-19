@@ -15,7 +15,7 @@ export class IamFeatureApplicationsController {
   @Post()
   async createApplication(
     @Body() body: { name: string; type: 'SPA' | 'WEB' | 'M2M' },
-    @Req() req: AuthenticatedRequest
+    @Req() req: AuthenticatedRequest,
   ) {
     // ✨ Extract the tenantId securely from the JWT token!
     const tenantId = req.user.tenantId;

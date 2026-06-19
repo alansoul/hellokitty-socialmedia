@@ -6,7 +6,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PostsModule } from '@hellokitty/social-feature-posts';
-import { JwtModule } from '@nestjs/jwt'; 
+import { JwtModule } from '@nestjs/jwt';
 
 // ✨ Safely parse the Render Internal Redis URL, or fallback to your local computer
 const REDIS_URL_STRING = process.env.REDIS_URL || 'redis://localhost:6379';

@@ -28,8 +28,8 @@ export class PostsService {
       where: { userId: data.authorId }, // Look up by Postgres UUID from the JWT
       update: {},
       create: {
-        userId: data.authorId, 
-        username: `user_${data.authorId.substring(0, 8)}`, 
+        userId: data.authorId,
+        username: `user_${data.authorId.substring(0, 8)}`,
         displayName: 'New User',
       },
     });

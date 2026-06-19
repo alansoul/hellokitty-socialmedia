@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 
 export function DashboardView() {
   const [loading, setLoading] = useState(false);
-  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
 
   const handleCreateApp = async () => {
     setLoading(true);
@@ -18,11 +19,11 @@ export function DashboardView() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: 'My Awesome React App',
-          type: 'SPA'
+          type: 'SPA',
         }),
       });
 
@@ -32,10 +33,9 @@ export function DashboardView() {
       }
 
       const newApp = await res.json();
-      
+
       toast.success('Application created successfully!');
       toast(`Your new Client ID is: ${newApp.clientId}`);
-
     } catch (error: unknown) {
       // ✨ ENTERPRISE FIX: Safe error checking without using 'any'!
       if (error instanceof Error) {
@@ -52,7 +52,9 @@ export function DashboardView() {
     <div className="space-y-6 font-sans">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-        <p className="text-gray-500 mt-1">Overview of your HelloKitty Auth tenant.</p>
+        <p className="text-gray-500 mt-1">
+          Overview of your HelloKitty Auth tenant.
+        </p>
       </div>
 
       {/* Stats Grid */}
@@ -98,10 +100,11 @@ export function DashboardView() {
       <div className="bg-gray-900 rounded-xl p-8 text-white mt-8 shadow-md">
         <h3 className="text-xl font-bold mb-2">Getting Started</h3>
         <p className="text-gray-400 mb-6 max-w-2xl">
-          To start authenticating users in your own applications, you need to register an Application to get a Client ID.
+          To start authenticating users in your own applications, you need to
+          register an Application to get a Client ID.
         </p>
-        
-        <button 
+
+        <button
           onClick={handleCreateApp}
           disabled={loading}
           className="flex items-center justify-center gap-2 bg-white text-gray-900 px-5 py-2.5 rounded-lg font-semibold hover:bg-gray-100 transition-colors disabled:opacity-70"

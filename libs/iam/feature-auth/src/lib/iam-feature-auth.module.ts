@@ -5,12 +5,13 @@ import { IamFeatureAuthService } from './iam-feature-auth.service';
 import { IamPrismaService } from '@hellokitty/data-access';
 
 @Module({
-    imports: [
-     // ✨ Register the JWT Module with a secret key
+  imports: [
+    // ✨ Register the JWT Module with a secret key
     JwtModule.register({
       global: true,
-      secret: process.env['JWT_SECRET'] || 'super-secret-dev-key-change-in-prod',
-      signOptions: { expiresIn: '1h' }, // Tokens expire in 1 hour
+      secret:
+        process.env['JWT_SECRET'] || 'super-secret-dev-key-change-in-prod',
+      signOptions: { expiresIn: '1d' }, // Tokens expire in 1 Day
     }),
   ],
   controllers: [IamFeatureAuthController],

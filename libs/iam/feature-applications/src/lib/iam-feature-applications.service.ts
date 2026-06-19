@@ -11,12 +11,17 @@ export class IamFeatureApplicationsService {
     return `${prefix}_${crypto.randomBytes(length).toString('hex').slice(0, length)}`;
   }
 
-  async createApplication(tenantId: string, name: string, type: 'SPA' | 'WEB' | 'M2M') {
+  async createApplication(
+    tenantId: string,
+    name: string,
+    type: 'SPA' | 'WEB' | 'M2M',
+  ) {
     const clientId = this.generateSecureId('hk'); // Example: hk_a7b8c9...
-    
+
     // SPAs (React/Next) don't get secrets because they can't hide them!
     // Web (Node) and M2M (Servers) get secure secrets.
-    const clientSecret = type === 'SPA' ? null : this.generateSecureId('sec', 64);
+    const clientSecret =
+      type === 'SPA' ? null : this.generateSecureId('sec', 64);
 
     const app = await this.prisma.application.create({
       data: {

@@ -12,7 +12,8 @@ export function SignupForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +35,6 @@ export function SignupForm() {
       // ✨ Show a success toast and send them to the login page!
       toast.success('Account created! Please sign in.');
       router.push('/login');
-      
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error(err.message);
@@ -48,13 +48,14 @@ export function SignupForm() {
 
   return (
     <div className="flex min-h-screen bg-white font-sans">
-      
       {/* Left Pane - Form Area */}
       <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:w-[480px] xl:w-[560px] relative">
-        
         {/* Brand Logo */}
         <div className="absolute top-8 left-8">
-          <Link href="/" className="text-2xl font-black tracking-tighter italic select-none text-gray-900">
+          <Link
+            href="/"
+            className="text-2xl font-black tracking-tighter italic select-none text-gray-900"
+          >
             HelloKitty.
           </Link>
         </div>
@@ -106,13 +107,22 @@ export function SignupForm() {
 
             <p className="mt-6 text-center text-xs text-gray-500">
               By signing up, you agree to our{' '}
-              <Link href="/terms" className="underline hover:text-gray-800">Terms</Link> and{' '}
-              <Link href="/privacy" className="underline hover:text-gray-800">Privacy Policy</Link>.
+              <Link href="/terms" className="underline hover:text-gray-800">
+                Terms
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="underline hover:text-gray-800">
+                Privacy Policy
+              </Link>
+              .
             </p>
-            
+
             <p className="mt-8 text-center text-sm text-gray-600">
               Already have an account?{' '}
-              <Link href="/login" className="font-semibold text-gray-900 hover:underline">
+              <Link
+                href="/login"
+                className="font-semibold text-gray-900 hover:underline"
+              >
                 Sign in
               </Link>
             </p>
@@ -132,7 +142,6 @@ export function SignupForm() {
           @hellokitty_studio
         </div>
       </div>
-
     </div>
   );
 }

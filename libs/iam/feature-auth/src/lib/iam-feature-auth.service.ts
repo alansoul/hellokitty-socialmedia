@@ -1,4 +1,8 @@
-import { Injectable, ConflictException, UnauthorizedException  } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { IamPrismaService } from '@hellokitty/data-access';
 import * as bcrypt from 'bcrypt';
@@ -7,7 +11,7 @@ import * as bcrypt from 'bcrypt';
 export class IamFeatureAuthService {
   constructor(
     private readonly prisma: IamPrismaService,
-    private readonly jwtService: JwtService 
+    private readonly jwtService: JwtService,
   ) {}
 
   async signup(email: string, passwordPlain: string) {
@@ -27,10 +31,10 @@ export class IamFeatureAuthService {
     const tenant = await this.prisma.tenant.upsert({
       where: { id: '00000000-0000-0000-0000-000000000001' }, // Dummy UUID for MVP
       update: {},
-      create: { 
+      create: {
         id: '00000000-0000-0000-0000-000000000001',
-        name: 'Default Tenant', 
-        region: 'us-east-1' 
+        name: 'Default Tenant',
+        region: 'us-east-1',
       },
     });
 
@@ -44,8 +48,8 @@ export class IamFeatureAuthService {
           create: {
             type: 'PASSWORD',
             passwordHash: passwordHash,
-          }
-        }
+          },
+        },
       },
       // Return the user ID and email, but DO NOT return the password hash
       select: {
@@ -54,39 +58,42 @@ export class IamFeatureAuthService {
         tenantId: true,
         status: true,
         createdAt: true,
-      }
+      },
     });
 
     return newUser;
-}
+  }
 
-    // -------------------------------------------------------------
+  // -------------------------------------------------------------
   // LOGIN METHOD
   // -------------------------------------------------------------
   async login(email: string, passwordPlain: string) {
     const user = await this.prisma.user.findFirst({
       where: { email },
-      include: { credentials: true }, 
+      include: { credentials: true },
     });
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const passwordCred = user.credentials.find(c => c.type === 'PASSWORD');
+    const passwordCred = user.credentials.find((c) => c.type === 'PASSWORD');
     if (!passwordCred || !passwordCred.passwordHash) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isPasswordValid = await bcrypt.compare(passwordPlain, passwordCred.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      passwordPlain,
+      passwordCred.passwordHash,
+    );
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const payload = { 
-      sub: user.id, 
-      email: user.email, 
-      tenantId: user.tenantId 
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
     };
 
     const accessToken = await this.jwtService.signAsync(payload);
@@ -94,7 +101,7 @@ export class IamFeatureAuthService {
     return {
       access_token: accessToken,
       token_type: 'Bearer',
-      expires_in: 3600,
+      expires_in: 86400,
     };
   }
 }

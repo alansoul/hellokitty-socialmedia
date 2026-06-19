@@ -15,7 +15,7 @@ export class IamFeatureAuthController {
   async signup(@Body() body: AuthDto) {
     return this.authService.signup(body.email, body.password);
   }
-  
+
   @Post('login')
   async login(@Body() body: AuthDto) {
     return this.authService.login(body.email, body.password);

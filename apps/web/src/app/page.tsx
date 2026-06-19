@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation'; // ✨ Import Next.js router
 import { Post } from '@hellokitty/types';
+import { Loader2 } from 'lucide-react'; // ✨ For a beautiful loading spinner
 
 const SOCIAL_API = process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
 
@@ -11,13 +12,28 @@ export default function Feed() {
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+   // ✨ Add this to prevent UI flickering while checking the token!
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true); 
+
   const router = useRouter(); // ✨ Initialize the router
+
+  useEffect(() => {
+    // Check auth instantly when the page loads
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      router.push('/login');
+    } else {
+      setIsCheckingAuth(false);
+      fetchPosts();
+    }
+  }, []);
 
   const fetchPosts = async () => {
     try {
       // ✨ 1. Grab the token from LocalStorage
       const token = localStorage.getItem('access_token');
-      
+
       // If no token exists, kick them back to the login page!
       if (!token) {
         router.push('/login');
@@ -27,9 +43,16 @@ export default function Feed() {
       // ✨ 2. Pass the token to the Social API
       const response = await fetch(`${SOCIAL_API}/posts`, {
         headers: {
-          'Authorization': `Bearer ${token}` 
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
+
+       // ✨ THE FIX: If the token is expired, delete it and kick them out!
+      if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        router.push('/login');
+        return;
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch posts');
@@ -41,10 +64,6 @@ export default function Feed() {
       console.error(error);
     }
   };
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +77,8 @@ export default function Feed() {
 
     const formData = new FormData();
     formData.append('content', content);
-    
-    // ✨ 3. WE DELETED THE FAKE authorId! 
+
+    // ✨ 3. WE DELETED THE FAKE authorId!
     // The NestJS backend will automatically extract the ID from the JWT!
 
     if (file) {
@@ -71,10 +90,17 @@ export default function Feed() {
         method: 'POST',
         headers: {
           // ✨ 4. Pass the token here as well
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
+
+      // ✨ Also kick them out here if token expired while typing a post
+      if (res.status === 401) {
+        localStorage.removeItem('access_token');
+        router.push('/login');
+        return;
+      }
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -91,6 +117,15 @@ export default function Feed() {
       setLoading(false);
     }
   };
+
+  // ✨ Show a loading screen while verifying the token so the page doesn't flash
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4 font-sans text-gray-800">
@@ -131,7 +166,7 @@ export default function Feed() {
             className="bg-white p-4 rounded-xl shadow-sm border"
           >
             <div className="flex items-center mb-4">
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold mr-3">
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold mr-3 uppercase">
                 {post.author?.displayName?.[0] || 'U'}
               </div>
               <div>
