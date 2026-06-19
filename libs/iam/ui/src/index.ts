@@ -6,4 +6,4 @@ export * from './lib/auth-console-shell/top-nav';
 export * from './lib/dashboard/dashboard-view';
 export * from './lib/applications/applications-view';
 export * from './lib/users/users-view';
-export * from './lib/organizations/organizations-view'
+export * from './lib/organizations/organizations-view';

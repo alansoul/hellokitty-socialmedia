@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'; // ✨ Import Next.js router
 import { Post } from '@hellokitty/types';
 import { Loader2 } from 'lucide-react'; // ✨ For a beautiful loading spinner
 
-const SOCIAL_API = process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
+const SOCIAL_API =
+  process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
 
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -13,8 +14,8 @@ export default function Feed() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
-   // ✨ Add this to prevent UI flickering while checking the token!
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true); 
+  // ✨ Add this to prevent UI flickering while checking the token!
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const router = useRouter(); // ✨ Initialize the router
 
@@ -47,7 +48,7 @@ export default function Feed() {
         },
       });
 
-       // ✨ THE FIX: If the token is expired, delete it and kick them out!
+      // ✨ THE FIX: If the token is expired, delete it and kick them out!
       if (response.status === 401) {
         localStorage.removeItem('access_token');
         router.push('/login');

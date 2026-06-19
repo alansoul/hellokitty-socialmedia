@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppWindow, Key, Copy, Plus, MoreHorizontal, X, Loader2  } from 'lucide-react';
+import {
+  AppWindow,
+  Key,
+  Copy,
+  Plus,
+  MoreHorizontal,
+  X,
+  Loader2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 // Define the shape of our data
@@ -18,17 +26,17 @@ export function ApplicationsView() {
   const [apps, setApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
 
-    // ✨ Modal State
+  // ✨ Modal State
   const [showModal, setShowModal] = useState(false);
   const [appName, setAppName] = useState('');
   const [appType, setAppType] = useState('SPA');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const router = useRouter();
-  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
 
   useEffect(() => {
-
     const fetchApplications = async () => {
       try {
         const token = localStorage.getItem('access_token');
@@ -62,9 +70,8 @@ export function ApplicationsView() {
       }
     };
 
-     fetchApplications();
+    fetchApplications();
   }, [AUTH_API, router]); // ✨ Added router to dependencies
-  
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -87,7 +94,7 @@ export function ApplicationsView() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ name: appName, type: appType }),
       });
@@ -97,19 +104,18 @@ export function ApplicationsView() {
         router.push('/login');
         return;
       }
-      
+
       if (!res.ok) throw new Error('Failed to create application');
 
       const newApp = await res.json();
-      
+
       // Add the new app to the top of the list instantly!
       setApps([newApp, ...apps]);
       setShowModal(false);
       setAppName('');
-      
+
       toast.success('Application created successfully!');
       toast(`Client ID: ${newApp.clientId}`);
-
     } catch (error: unknown) {
       if (error instanceof Error) toast.error(error.message);
     } finally {
@@ -123,9 +129,11 @@ export function ApplicationsView() {
       <div className="flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Applications</h2>
-          <p className="text-gray-500 mt-1">Setup and manage your registered applications.</p>
+          <p className="text-gray-500 mt-1">
+            Setup and manage your registered applications.
+          </p>
         </div>
-        <button 
+        <button
           onClick={() => setShowModal(true)}
           className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
         >
@@ -137,17 +145,26 @@ export function ApplicationsView() {
       {/* Applications List */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500 animate-pulse">Loading applications...</div>
+          <div className="p-8 text-center text-gray-500 animate-pulse">
+            Loading applications...
+          </div>
         ) : apps.length === 0 ? (
           <div className="p-12 text-center">
             <AppWindow className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">No applications found</h3>
-            <p className="text-gray-500 mt-1">Create your first application to get started.</p>
+            <h3 className="text-lg font-medium text-gray-900">
+              No applications found
+            </h3>
+            <p className="text-gray-500 mt-1">
+              Create your first application to get started.
+            </p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-200">
             {apps.map((app) => (
-              <li key={app.id} className="p-6 hover:bg-gray-50 transition-colors group">
+              <li
+                key={app.id}
+                className="p-6 hover:bg-gray-50 transition-colors group"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-gray-100 text-gray-600 rounded-lg">
@@ -163,13 +180,16 @@ export function ApplicationsView() {
                         </span>
                         <span className="text-sm text-gray-500 flex items-center gap-1">
                           <Key className="w-3.5 h-3.5" />
-                          Client ID: <span className="font-mono text-gray-700">{app.clientId.substring(0, 16)}...</span>
+                          Client ID:{' '}
+                          <span className="font-mono text-gray-700">
+                            {app.clientId.substring(0, 16)}...
+                          </span>
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <button 
+                    <button
                       onClick={() => copyToClipboard(app.clientId)}
                       className="text-gray-400 hover:text-gray-900 px-3 py-1.5 border border-gray-200 bg-white rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2"
                     >
@@ -192,15 +212,22 @@ export function ApplicationsView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="flex justify-between items-center p-6 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">Create Application</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-bold text-gray-900">
+                Create Application
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <form onSubmit={handleCreateApp} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Application Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Application Name
+                </label>
                 <input
                   type="text"
                   required
@@ -213,14 +240,20 @@ export function ApplicationsView() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Application Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Application Type
+                </label>
                 <select
                   value={appType}
                   onChange={(e) => setAppType(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all bg-white"
                 >
-                  <option value="SPA">Single Page Application (React, Vue, Angular)</option>
-                  <option value="WEB">Regular Web Application (Node, Python)</option>
+                  <option value="SPA">
+                    Single Page Application (React, Vue, Angular)
+                  </option>
+                  <option value="WEB">
+                    Regular Web Application (Node, Python)
+                  </option>
                   <option value="M2M">Machine to Machine (API to API)</option>
                 </select>
               </div>

@@ -17,7 +17,7 @@ export default function AuthConsoleLayout({
   useEffect(() => {
     // ✨ Instantly check for the token when ANY dashboard page loads
     const token = localStorage.getItem('access_token');
-    
+
     if (!token) {
       router.push('/login'); // Kick them out!
     } else {
@@ -27,8 +27,7 @@ export default function AuthConsoleLayout({
 
   // ✨ Show a spinner while checking to prevent UI flickering
   if (isCheckingAuth) {
-
-  return (
+    return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
       </div>
@@ -38,19 +37,15 @@ export default function AuthConsoleLayout({
   // ✨ If they have a token, render the beautiful shell
   return (
     <div className="flex h-screen bg-white font-sans overflow-hidden">
-      
       <AuthConsoleSidebar />
 
       <div className="flex-1 flex flex-col relative overflow-hidden">
         <AuthConsoleTopNav />
 
         <main className="flex-1 overflow-y-auto p-8 bg-[#FAFAFA]">
-          <div className="max-w-5xl mx-auto">
-            {children}
-          </div>
+          <div className="max-w-5xl mx-auto">{children}</div>
         </main>
       </div>
-
     </div>
   );
 }

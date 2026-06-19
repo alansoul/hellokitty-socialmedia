@@ -1,0 +1,9 @@
+{
+  "name": "iam-feature-oauth",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/iam/feature-oauth/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project iam-feature-oauth --web",
+  "targets": {}
+}

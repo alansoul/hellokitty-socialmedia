@@ -15,7 +15,7 @@ export class IamFeatureOrganizationsController {
   @Post()
   async createOrg(
     @Body() body: { name: string },
-    @Req() req: AuthenticatedRequest
+    @Req() req: AuthenticatedRequest,
   ) {
     const tenantId = req.user.tenantId;
     const userId = req.user.sub; // The user creating it

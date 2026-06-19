@@ -6,7 +6,7 @@ export class IamFeatureOrganizationsService {
   constructor(private readonly prisma: IamPrismaService) {}
 
   async createOrganization(tenantId: string, userId: string, name: string) {
-    // ✨ Use a Prisma Transaction! 
+    // ✨ Use a Prisma Transaction!
     // This ensures that if the Membership fails, the Organization is rolled back.
     const result = await this.prisma.$transaction(async (tx) => {
       // 1. Create the Org
@@ -40,7 +40,7 @@ export class IamFeatureOrganizationsService {
       include: {
         organization: true,
       },
-      orderBy: { organization: { name: 'asc' } }
+      orderBy: { organization: { name: 'asc' } },
     });
 
     // Map it so it returns a clean array of organizations with the user's role attached

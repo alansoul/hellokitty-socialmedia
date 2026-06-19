@@ -94,7 +94,8 @@
       ],
       "@hellokitty/iam-feature-billing": [
         "./libs/iam/feature-billing/src/index.ts"
-      ]
+      ],
+      "@hellokitty/iam-feature-oauth": ["./libs/iam/feature-oauth/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
