@@ -23,6 +23,17 @@ export class PostsService {
   ) {
     const isVideo = file?.mimetype.startsWith('video') || false;
 
+    // ✨ THE BRIDGE: Find or create the MongoDB UserProfile using the Postgres UUID!
+    const profile = await this.prisma.userProfile.upsert({
+      where: { userId: data.authorId }, // Look up by Postgres UUID from the JWT
+      update: {},
+      create: {
+        userId: data.authorId, 
+        username: `user_${data.authorId.substring(0, 8)}`, 
+        displayName: 'New User',
+      },
+    });
+
     // 1. Save to DB INSTANTLY (Notice mediaUrl is null for now)
     const post = await this.prisma.post.create({
       data: {
@@ -32,7 +43,7 @@ export class PostsService {
             ? MediaType.VIDEO
             : MediaType.IMAGE
           : MediaType.TEXT,
-        authorId: data.authorId,
+        authorId: profile.id, // 🔒 FIX: Use the MongoDB ObjectId!
       },
     });
 

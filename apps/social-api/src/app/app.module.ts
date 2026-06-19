@@ -6,6 +6,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PostsModule } from '@hellokitty/social-feature-posts';
+import { JwtModule } from '@nestjs/jwt'; 
 
 // ✨ Safely parse the Render Internal Redis URL, or fallback to your local computer
 const REDIS_URL_STRING = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -13,6 +14,12 @@ const redisUrl = new URL(REDIS_URL_STRING);
 
 @Module({
   imports: [
+    // ✨ ADD THE JWT MODULE HERE
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_SECRET || 'super-secret-dev-key-change-in-prod',
+    }),
+
     // 1. Background Jobs Configuration (BullMQ)
     BullModule.forRoot({
       connection: {

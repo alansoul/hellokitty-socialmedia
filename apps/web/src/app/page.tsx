@@ -1,23 +1,35 @@
-// apps/web/src/app/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; // ✨ Import Next.js router
 import { Post } from '@hellokitty/types';
 
-// ✨ Dynamic URL with a safe fallback for cloud builds
-const SOCIAL_API =
-  process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
+const SOCIAL_API = process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
 
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter(); // ✨ Initialize the router
 
   const fetchPosts = async () => {
     try {
-      // ✨ Use the dynamic SOCIAL_API variable instead of hardcoded localhost
-      const response = await fetch(`${SOCIAL_API}/posts`);
+      // ✨ 1. Grab the token from LocalStorage
+      const token = localStorage.getItem('access_token');
+      
+      // If no token exists, kick them back to the login page!
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      // ✨ 2. Pass the token to the Social API
+      const response = await fetch(`${SOCIAL_API}/posts`, {
+        headers: {
+          'Authorization': `Bearer ${token}` 
+        }
+      });
 
       if (!response.ok) {
         throw new Error('Failed to fetch posts');
@@ -38,17 +50,29 @@ export default function Feed() {
     e.preventDefault();
     setLoading(true);
 
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('content', content);
-    formData.append('authorId', 'test-user-id');
+    
+    // ✨ 3. WE DELETED THE FAKE authorId! 
+    // The NestJS backend will automatically extract the ID from the JWT!
+
     if (file) {
       formData.append('file', file);
     }
 
     try {
-      // ✨ Use the dynamic SOCIAL_API variable here too!
       const res = await fetch(`${SOCIAL_API}/posts`, {
         method: 'POST',
+        headers: {
+          // ✨ 4. Pass the token here as well
+          'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
