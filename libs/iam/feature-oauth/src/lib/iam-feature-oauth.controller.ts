@@ -37,26 +37,28 @@ export class IamFeatureOauthController {
   // ✨ This handles BOTH authorization codes AND refresh tokens
   @Post('token')
   async token(
-    @Body() body: { 
-      grant_type: string; 
-      client_id?: string; 
-      client_secret?: string; 
-      code?: string; 
+    @Body()
+    body: {
+      grant_type: string;
+      client_id?: string;
+      client_secret?: string;
+      code?: string;
       refresh_token?: string; // ✨ Added refresh_token
       redirect_uri?: string;
-    }
+    },
   ) {
-    
     // Flow 1: Exchanging a code for the first time
     if (body.grant_type === 'authorization_code') {
       if (!body.client_id || !body.code || !body.redirect_uri) {
-        throw new UnauthorizedException('Missing required parameters for authorization_code');
+        throw new UnauthorizedException(
+          'Missing required parameters for authorization_code',
+        );
       }
       return this.oauthService.exchangeToken(
-        body.client_id, 
-        body.client_secret || null, 
-        body.code, 
-        body.redirect_uri
+        body.client_id,
+        body.client_secret || null,
+        body.code,
+        body.redirect_uri,
       );
     }
 

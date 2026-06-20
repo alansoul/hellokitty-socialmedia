@@ -84,7 +84,7 @@ export class IamFeatureOauthService {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    
+
     const payload = {
       sub: user?.id,
       email: user?.email,
@@ -92,8 +92,7 @@ export class IamFeatureOauthService {
     };
     const accessToken = await this.jwtService.signAsync(payload);
 
-
-     // ✨ Generate a fresh Refresh Token for the initial exchange!
+    // ✨ Generate a fresh Refresh Token for the initial exchange!
     const refreshToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
@@ -102,7 +101,6 @@ export class IamFeatureOauthService {
       data: { userId: user.id, sessionToken: refreshToken, expiresAt },
     });
 
-
     return {
       access_token: accessToken,
       refresh_token: refreshToken, // Send the new refresh token back!
@@ -110,7 +108,7 @@ export class IamFeatureOauthService {
       expires_in: 86400,
     };
   }
-    // ✨ Added the missing Refresh Token Method!
+  // ✨ Added the missing Refresh Token Method!
   async refreshAccessToken(refreshToken: string) {
     const session = await this.prisma.session.findUnique({
       where: { sessionToken: refreshToken },
@@ -131,7 +129,11 @@ export class IamFeatureOauthService {
       data: { sessionToken: newRefreshToken, expiresAt: newExpiresAt },
     });
 
-    const payload = { sub: session.user.id, email: session.user.email, tenantId: session.user.tenantId };
+    const payload = {
+      sub: session.user.id,
+      email: session.user.email,
+      tenantId: session.user.tenantId,
+    };
     const accessToken = await this.jwtService.signAsync(payload);
 
     return {

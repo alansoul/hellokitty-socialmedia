@@ -99,7 +99,7 @@ export class IamFeatureAuthService {
 
     const accessToken = await this.jwtService.signAsync(payload);
 
-     // ✨ 1. GENERATE A REFRESH TOKEN (Expires in 7 days)
+    // ✨ 1. GENERATE A REFRESH TOKEN (Expires in 7 days)
     const refreshToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
