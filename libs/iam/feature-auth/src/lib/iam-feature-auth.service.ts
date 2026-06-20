@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { IamPrismaService } from '@hellokitty/data-access';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class IamFeatureAuthService {
@@ -98,8 +99,23 @@ export class IamFeatureAuthService {
 
     const accessToken = await this.jwtService.signAsync(payload);
 
+     // ✨ 1. GENERATE A REFRESH TOKEN (Expires in 7 days)
+    const refreshToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // ✨ 2. SAVE THE SESSION TO POSTGRES
+    await this.prisma.session.create({
+      data: {
+        userId: user.id,
+        sessionToken: refreshToken,
+        expiresAt: expiresAt,
+      },
+    });
+
     return {
       access_token: accessToken,
+      refresh_token: refreshToken, // ✨ 3. RETURN IT TO THE USER
       token_type: 'Bearer',
       expires_in: 86400,
     };

@@ -5,7 +5,7 @@ import { IamFeatureAuthModule } from '@hellokitty/feature-auth';
 import { IamFeatureApplicationsModule } from '@hellokitty/iam-feature-applications';
 import { IamFeatureUsersModule } from '@hellokitty/iam-feature-users';
 import { IamFeatureOrganizationsModule } from '@hellokitty/iam-feature-organizations';
-import { IamFeatureOauthModule } from '@hellokitty/iam-feature-oauth'; 
+import { IamFeatureOauthModule } from '@hellokitty/iam-feature-oauth';
 
 @Module({
   imports: [
