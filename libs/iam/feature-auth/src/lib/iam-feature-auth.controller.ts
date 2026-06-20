@@ -20,4 +20,9 @@ export class IamFeatureAuthController {
   async login(@Body() body: AuthDto) {
     return this.authService.login(body.email, body.password);
   }
+  // ✨ NEW: Google Social Login Endpoint!
+  @Post('google')
+  async googleLogin(@Body() body: { token: string }) {
+    return this.authService.loginWithGoogle(body.token);
+  }
 }

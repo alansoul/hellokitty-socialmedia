@@ -14,7 +14,8 @@ export class IamFeatureOidcController {
   // ✨ Public Discovery Endpoint (Standard OIDC Protocol)
   @Get('.well-known/openid-configuration')
   getDiscovery() {
-    const baseUrl = process.env['NEXT_PUBLIC_AUTH_API_URL'] || 'http://localhost:3001/api';
+    const baseUrl =
+      process.env['NEXT_PUBLIC_AUTH_API_URL'] || 'http://localhost:3001/api';
     return this.oidcService.getDiscoveryConfig(baseUrl);
   }
 

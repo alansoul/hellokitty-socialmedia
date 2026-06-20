@@ -7,19 +7,23 @@ import { JwtService } from '@nestjs/jwt';
 import { IamPrismaService } from '@hellokitty/data-access';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library'; // ✨ Added Google Library
 
 @Injectable()
 export class IamFeatureAuthService {
+  private googleClient: OAuth2Client;
+
   constructor(
     private readonly prisma: IamPrismaService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) {
+    // Initialize the Google Client with your future Client ID
+    this.googleClient = new OAuth2Client(process.env['GOOGLE_CLIENT_ID']);
+  }
 
   async signup(email: string, passwordPlain: string) {
     // 1. Ensure the user doesn't already exist
-    const existingUser = await this.prisma.user.findFirst({
-      where: { email },
-    });
+    const existingUser = await this.prisma.user.findFirst({ where: { email } });
 
     if (existingUser) {
       throw new ConflictException('A user with this email already exists.');
@@ -91,12 +95,76 @@ export class IamFeatureAuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      tenantId: user.tenantId,
-    };
+    // ✨ Use the shared helper function
+    return this.generateTokens(user.id, user.email, user.tenantId);
+  }
 
+    // -------------------------------------------------------------
+  // GOOGLE LOGIN METHOD
+  // -------------------------------------------------------------
+  async loginWithGoogle(idToken: string) {
+    let payload;
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: process.env['GOOGLE_CLIENT_ID'],
+      });
+      payload = ticket.getPayload();
+    } catch {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+
+    if (!payload || !payload.email) throw new UnauthorizedException('Google token missing email');
+
+    const googleId = payload.sub; 
+    const email = payload.email;
+
+    const identity = await this.prisma.identity.findUnique({
+      where: { provider_providerUserId: { provider: 'google', providerUserId: googleId } }
+    });
+
+    let user;
+
+    if (identity) {
+      user = await this.prisma.user.findUnique({ where: { id: identity.userId } });
+    } else {
+      user = await this.prisma.user.findFirst({ where: { email } });
+
+      if (!user) {
+        const tenant = await this.prisma.tenant.upsert({
+          where: { id: '00000000-0000-0000-0000-000000000001' },
+          update: {},
+          create: { id: '00000000-0000-0000-0000-000000000001', name: 'Default Tenant', region: 'us-east-1' },
+        });
+
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            tenantId: tenant.id,
+            status: 'ACTIVE',
+            emailVerified: true, 
+          }
+        });
+      }
+
+      await this.prisma.identity.create({
+        data: { provider: 'google', providerUserId: googleId, userId: user.id }
+      });
+    }
+
+    if (!user) throw new UnauthorizedException('Failed to process Google Login');
+
+    return this.generateTokens(user.id, user.email, user.tenantId);
+  }
+
+
+   // -------------------------------------------------------------
+  // TOKEN GENERATION HELPER
+  // -------------------------------------------------------------
+
+    // ✨ HELPER: We extracted token generation so both login methods can use it!
+  private async generateTokens(userId: string, email: string, tenantId: string) {
+    const payload = { sub: userId, email, tenantId };
     const accessToken = await this.jwtService.signAsync(payload);
 
     // ✨ 1. GENERATE A REFRESH TOKEN (Expires in 7 days)
@@ -107,7 +175,7 @@ export class IamFeatureAuthService {
     // ✨ 2. SAVE THE SESSION TO POSTGRES
     await this.prisma.session.create({
       data: {
-        userId: user.id,
+        userId: userId,
         sessionToken: refreshToken,
         expiresAt: expiresAt,
       },
