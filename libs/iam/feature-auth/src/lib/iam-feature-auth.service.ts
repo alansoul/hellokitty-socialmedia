@@ -99,7 +99,7 @@ export class IamFeatureAuthService {
     return this.generateTokens(user.id, user.email, user.tenantId);
   }
 
-    // -------------------------------------------------------------
+  // -------------------------------------------------------------
   // GOOGLE LOGIN METHOD
   // -------------------------------------------------------------
   async loginWithGoogle(idToken: string) {
@@ -114,19 +114,27 @@ export class IamFeatureAuthService {
       throw new UnauthorizedException('Invalid Google token');
     }
 
-    if (!payload || !payload.email) throw new UnauthorizedException('Google token missing email');
+    if (!payload || !payload.email)
+      throw new UnauthorizedException('Google token missing email');
 
-    const googleId = payload.sub; 
+    const googleId = payload.sub;
     const email = payload.email;
 
     const identity = await this.prisma.identity.findUnique({
-      where: { provider_providerUserId: { provider: 'google', providerUserId: googleId } }
+      where: {
+        provider_providerUserId: {
+          provider: 'google',
+          providerUserId: googleId,
+        },
+      },
     });
 
     let user;
 
     if (identity) {
-      user = await this.prisma.user.findUnique({ where: { id: identity.userId } });
+      user = await this.prisma.user.findUnique({
+        where: { id: identity.userId },
+      });
     } else {
       user = await this.prisma.user.findFirst({ where: { email } });
 
@@ -134,7 +142,11 @@ export class IamFeatureAuthService {
         const tenant = await this.prisma.tenant.upsert({
           where: { id: '00000000-0000-0000-0000-000000000001' },
           update: {},
-          create: { id: '00000000-0000-0000-0000-000000000001', name: 'Default Tenant', region: 'us-east-1' },
+          create: {
+            id: '00000000-0000-0000-0000-000000000001',
+            name: 'Default Tenant',
+            region: 'us-east-1',
+          },
         });
 
         user = await this.prisma.user.create({
@@ -142,28 +154,32 @@ export class IamFeatureAuthService {
             email,
             tenantId: tenant.id,
             status: 'ACTIVE',
-            emailVerified: true, 
-          }
+            emailVerified: true,
+          },
         });
       }
 
       await this.prisma.identity.create({
-        data: { provider: 'google', providerUserId: googleId, userId: user.id }
+        data: { provider: 'google', providerUserId: googleId, userId: user.id },
       });
     }
 
-    if (!user) throw new UnauthorizedException('Failed to process Google Login');
+    if (!user)
+      throw new UnauthorizedException('Failed to process Google Login');
 
     return this.generateTokens(user.id, user.email, user.tenantId);
   }
 
-
-   // -------------------------------------------------------------
+  // -------------------------------------------------------------
   // TOKEN GENERATION HELPER
   // -------------------------------------------------------------
 
-    // ✨ HELPER: We extracted token generation so both login methods can use it!
-  private async generateTokens(userId: string, email: string, tenantId: string) {
+  // ✨ HELPER: We extracted token generation so both login methods can use it!
+  private async generateTokens(
+    userId: string,
+    email: string,
+    tenantId: string,
+  ) {
     const payload = { sub: userId, email, tenantId };
     const accessToken = await this.jwtService.signAsync(payload);
 

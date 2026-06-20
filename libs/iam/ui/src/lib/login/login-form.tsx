@@ -13,7 +13,8 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
   const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +38,6 @@ export function LoginForm() {
 
       toast.success('Successfully logged in!');
       router.push('/');
-
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error(err.message); // ✨ Premium toast instead of ugly red text!
@@ -50,7 +50,9 @@ export function LoginForm() {
   };
 
   // ✨ Handle the Google Login Success!
-  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+  const handleGoogleSuccess = async (credentialResponse: {
+    credential?: string;
+  }) => {
     try {
       // 1. Send the Google Token to our NestJS API
       const res = await fetch(`${AUTH_API}/auth/google`, {
@@ -64,24 +66,26 @@ export function LoginForm() {
       // 2. We get back our HelloKitty JWT!
       const data = await res.json();
       localStorage.setItem('access_token', data.access_token);
-      
+
       toast.success('Successfully logged in with Google!');
       router.push('/');
-      
     } catch {
       toast.error('Google login failed. Please try again.');
     }
   };
 
- return (
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || 'dummy-id-to-prevent-crash'}>
+  return (
+    <GoogleOAuthProvider
+      clientId={GOOGLE_CLIENT_ID || 'dummy-id-to-prevent-crash'}
+    >
       <div className="flex min-h-screen bg-white font-sans">
-        
         {/* Left Pane - Form Area */}
         <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:w-[480px] xl:w-[560px] relative">
-          
           <div className="absolute top-8 left-8">
-            <Link href="/" className="text-2xl font-black tracking-tighter italic select-none text-gray-900">
+            <Link
+              href="/"
+              className="text-2xl font-black tracking-tighter italic select-none text-gray-900"
+            >
               HelloKitty.
             </Link>
           </div>
@@ -94,7 +98,6 @@ export function LoginForm() {
             </div>
 
             <div className="mt-8">
-              
               <div className="flex justify-center w-full mb-6">
                 {GOOGLE_CLIENT_ID ? (
                   <GoogleLogin
@@ -108,14 +111,21 @@ export function LoginForm() {
                 ) : (
                   <div className="w-full p-4 border border-red-200 bg-red-50 text-red-600 rounded-xl text-sm text-center font-medium">
                     {/* ✨ Fixed: Wrapped the emoji for accessibility! */}
-                    <span role="img" aria-label="warning">⚠️</span> NEXT_PUBLIC_GOOGLE_CLIENT_ID is missing in apps/web/.env.local
+                    <span role="img" aria-label="warning">
+                      ⚠️
+                    </span>{' '}
+                    NEXT_PUBLIC_GOOGLE_CLIENT_ID is missing in
+                    apps/web/.env.local
                   </div>
                 )}
               </div>
 
               {/* Divider */}
               <div className="relative mt-4 mb-6">
-                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div
+                  className="absolute inset-0 flex items-center"
+                  aria-hidden="true"
+                >
                   <div className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-sm font-medium leading-6">
@@ -158,13 +168,22 @@ export function LoginForm() {
 
               <p className="mt-6 text-center text-xs text-gray-500">
                 By continuing, you agree to our{' '}
-                <Link href="/terms" className="underline hover:text-gray-800">Terms</Link> and{' '}
-                <Link href="/privacy" className="underline hover:text-gray-800">Privacy Policy</Link>.
+                <Link href="/terms" className="underline hover:text-gray-800">
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="underline hover:text-gray-800">
+                  Privacy Policy
+                </Link>
+                .
               </p>
 
               <p className="mt-8 text-center text-sm text-gray-600">
                 Don't have an account?{' '}
-                <Link href="/signup" className="font-semibold text-gray-900 hover:underline">
+                <Link
+                  href="/signup"
+                  className="font-semibold text-gray-900 hover:underline"
+                >
                   Sign up
                 </Link>
               </p>

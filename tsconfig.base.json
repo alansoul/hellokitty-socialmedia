@@ -95,6 +95,7 @@
       "@hellokitty/iam-feature-billing": [
         "./libs/iam/feature-billing/src/index.ts"
       ],
+      "@hellokitty/iam-feature-mfa": ["./libs/iam/feature-mfa/src/index.ts"],
       "@hellokitty/iam-feature-oauth": ["./libs/iam/feature-oauth/src/index.ts"]
     }
   },
