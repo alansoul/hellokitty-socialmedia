@@ -6,7 +6,7 @@
     "dev:web": "nx serve web",
     "dev:auth": "nx serve auth-api",
     "dev:social": "nx serve social-api",
-    "dev:all": "nx run-many --target=serve --projects=auth-api,social-api,worker,web --parallel=3 --output-style=stream",
+    "dev:all": "nx run-many --target=serve --projects=auth-api,social-api,worker,web --parallel=4 --output-style=stream",
     "build:all": "nx run-many --target=build --all --parallel=3",
     "postinstall": "pnpm prisma:generate:all",
     "prisma:generate:all": "npx prisma generate --schema=libs/iam/data-access/prisma/schema.prisma && npx prisma generate --schema=libs/social/data-access/prisma/schema.prisma",
@@ -119,6 +119,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "sonner": "^2.0.7",
+    "speakeasy": "^2.0.0",
     "zod": "^4.4.3"
   }
 }

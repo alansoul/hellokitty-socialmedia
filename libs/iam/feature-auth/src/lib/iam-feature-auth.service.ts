@@ -80,9 +80,9 @@ export class IamFeatureAuthService {
   async login(email: string, passwordPlain: string) {
     const user = await this.prisma.user.findFirst({
       where: { email },
-      include: { 
+      include: {
         credentials: true,
-        mfaFactors: { where: { verified: true } } // ✅ Moved INSIDE the include block!
+        mfaFactors: { where: { verified: true } }, // ✅ Moved INSIDE the include block!
       },
     });
 
@@ -112,12 +112,14 @@ export class IamFeatureAuthService {
     if (user.mfaFactors && user.mfaFactors.length > 0) {
       // DO NOT issue an access token. Issue a 5-minute temporary MFA token!
       const mfaPayload = { sub: user.id, mfa_required: true };
-      const mfaToken = await this.jwtService.signAsync(mfaPayload, { expiresIn: '5m' });
-      
+      const mfaToken = await this.jwtService.signAsync(mfaPayload, {
+        expiresIn: '5m',
+      });
+
       return {
         mfa_required: true,
         mfa_token: mfaToken,
-        message: 'Please provide your 6-digit authenticator code.'
+        message: 'Please provide your 6-digit authenticator code.',
       };
     }
 
@@ -145,7 +147,7 @@ export class IamFeatureAuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      include: { mfaFactors: { where: { verified: true } } }
+      include: { mfaFactors: { where: { verified: true } } },
     });
 
     if (!user || !user.mfaFactors || user.mfaFactors.length === 0) {
@@ -156,7 +158,9 @@ export class IamFeatureAuthService {
 
     // ✨ FIX: Safely check if secret exists to satisfy ESLint
     if (!factor.secret) {
-      throw new UnauthorizedException('MFA configuration is broken or missing secret');
+      throw new UnauthorizedException(
+        'MFA configuration is broken or missing secret',
+      );
     }
 
     // ✨ Mathematically verify the 6-digit code
@@ -164,7 +168,7 @@ export class IamFeatureAuthService {
       secret: factor.secret, // No more '!' needed here!
       encoding: 'base32',
       token: code,
-      window: 1 
+      window: 1,
     });
 
     if (!isValid) throw new UnauthorizedException('Invalid 6-digit code');
@@ -172,7 +176,7 @@ export class IamFeatureAuthService {
     // Code is perfect! Issue the real JWTs.
     return this.generateTokens(user.id, user.email, user.tenantId);
   }
-  
+
   // -------------------------------------------------------------
   // GOOGLE LOGIN METHOD
   // -------------------------------------------------------------

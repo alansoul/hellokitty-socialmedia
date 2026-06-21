@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UnauthorizedException  } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
 import { IamFeatureAuthService } from './iam-feature-auth.service';
 
 // ✨ Renamed to AuthDto since both signup and login need an email & password
