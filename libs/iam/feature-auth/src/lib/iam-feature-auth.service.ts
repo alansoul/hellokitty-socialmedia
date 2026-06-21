@@ -258,7 +258,27 @@ export class IamFeatureAuthService {
     email: string,
     tenantId: string,
   ) {
-    const payload = { sub: userId, email, tenantId };
+
+     // ✨ Fetch all organizations this user belongs to!
+    const memberships = await this.prisma.membership.findMany({
+      where: { userId },
+      select: { organizationId: true, role: true }
+    });
+
+    // ✨ Format them into a clean dictionary: { "org123": "ADMIN" }
+    const orgRoles = memberships.reduce((acc, m) => {
+      acc[m.organizationId] = m.role;
+      return acc;
+    }, {} as Record<string, string>);
+
+    // ✨ Embed the roles directly into the JWT payload!
+    const payload = { 
+      sub: userId, 
+      email, 
+      tenantId,
+      org_roles: orgRoles // <--- The magic happens here!
+    };
+    
     const accessToken = await this.jwtService.signAsync(payload);
 
     // ✨ 1. GENERATE A REFRESH TOKEN (Expires in 7 days)

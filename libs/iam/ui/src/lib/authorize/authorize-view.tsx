@@ -8,16 +8,17 @@ import { toast } from 'sonner';
 function AuthorizeContent() {
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  
+
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Extract OAuth2 standard parameters from the URL
   const clientId = searchParams.get('client_id');
   const redirectUri = searchParams.get('redirect_uri');
   const state = searchParams.get('state');
 
-  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -40,17 +41,17 @@ function AuthorizeContent() {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      
+
       // 1. Call our secure backend to generate the 60-second code
       const res = await fetch(`${AUTH_API}/oauth/authorize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           client_id: clientId,
-          redirect_uri: redirectUri
+          redirect_uri: redirectUri,
         }),
       });
 
@@ -60,16 +61,15 @@ function AuthorizeContent() {
       }
 
       const data = await res.json();
-      
+
       // 2. We got the code! Now we redirect the user BACK to the 3rd-party app.
       // We also pass back the 'state' parameter if they provided one (OAuth2 Security standard).
       const finalRedirectUrl = `${redirectUri}?code=${data.code}${state ? `&state=${state}` : ''}`;
-      
+
       toast.success('Authorized! Redirecting...');
-      
+
       // Send them back to the app!
       window.location.href = finalRedirectUrl;
-
     } catch (error: unknown) {
       if (error instanceof Error) toast.error(error.message);
     } finally {
@@ -97,7 +97,9 @@ function AuthorizeContent() {
         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-red-100">
           <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900">Invalid Request</h2>
-          <p className="text-gray-500 mt-2">Missing required OAuth parameters (client_id or redirect_uri).</p>
+          <p className="text-gray-500 mt-2">
+            Missing required OAuth parameters (client_id or redirect_uri).
+          </p>
         </div>
       </div>
     );
@@ -106,7 +108,6 @@ function AuthorizeContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
       <div className="bg-white rounded-3xl shadow-xl border border-gray-100 max-w-md w-full overflow-hidden">
-        
         {/* Header Branding */}
         <div className="bg-gray-900 p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 to-orange-400"></div>
@@ -122,9 +123,12 @@ function AuthorizeContent() {
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-blue-100">
               <ShieldAlert className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Authorization Request</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              Authorization Request
+            </h3>
             <p className="text-gray-600 mt-2 text-sm leading-relaxed">
-              A third-party application is requesting access to your HelloKitty account.
+              A third-party application is requesting access to your HelloKitty
+              account.
             </p>
             <div className="mt-4 inline-block bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-mono text-gray-600 border border-gray-200">
               Client ID: {clientId.substring(0, 8)}...
@@ -132,7 +136,9 @@ function AuthorizeContent() {
           </div>
 
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mb-8">
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">This app will be able to:</p>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+              This app will be able to:
+            </p>
             <ul className="space-y-3">
               <li className="flex gap-3 text-sm text-gray-700 items-start">
                 <Check className="w-5 h-5 text-green-500 shrink-0" />
@@ -162,9 +168,9 @@ function AuthorizeContent() {
               Authorize
             </button>
           </div>
-          
+
           <p className="text-center text-xs text-gray-400 mt-6">
-            You will be redirected to: <br/>
+            You will be redirected to: <br />
             <span className="font-mono">{redirectUri}</span>
           </p>
         </div>
@@ -176,7 +182,13 @@ function AuthorizeContent() {
 // ✨ Wrap in Suspense because we are using Next.js useSearchParams()
 export function AuthorizeView() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+        </div>
+      }
+    >
       <AuthorizeContent />
     </Suspense>
   );

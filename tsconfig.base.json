@@ -39,6 +39,7 @@
       "@hellokitty/iam-feature-users": [
         "./libs/iam/feature-users/src/index.ts"
       ],
+      "@hellokitty/iam-feature-rbac": ["./libs/iam/feature-rbac/src/index.ts"],
       "@hellokitty/social-feature-feed": [
         "./libs/social/feature-feed/src/index.ts"
       ],

@@ -8,6 +8,7 @@ import { IamFeatureOrganizationsModule } from '@hellokitty/iam-feature-organizat
 import { IamFeatureOauthModule } from '@hellokitty/iam-feature-oauth';
 import { IamFeatureOidcModule } from '@hellokitty/iam-feature-oidc';
 import { IamFeatureMfaModule } from '@hellokitty/iam-feature-mfa';
+import { IamFeatureRbacModule } from '@hellokitty/iam-feature-rbac';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { IamFeatureMfaModule } from '@hellokitty/iam-feature-mfa';
     IamFeatureOauthModule,
     IamFeatureOidcModule,
     IamFeatureMfaModule,
+    IamFeatureRbacModule,
   ],
   controllers: [AppController],
   providers: [AppService],
