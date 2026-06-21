@@ -15,13 +15,13 @@ export class IamFeatureMfaService {
       name: `HelloKitty Auth (${email})`,
       issuer: 'HelloKitty',
     });
-    
+
     // Turn the URI into a Base64 Image string so React can display it instantly!
     const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url as string);
 
     // Delete any previous UNVERIFIED setup attempts for this user
     await this.prisma.mfaFactor.deleteMany({
-      where: { userId, type: 'TOTP', verified: false }
+      where: { userId, type: 'TOTP', verified: false },
     });
 
     // Save the new base32 secret to the database (unverified for now)
@@ -30,8 +30,8 @@ export class IamFeatureMfaService {
         userId,
         type: 'TOTP',
         secret: secret.base32,
-        verified: false
-      }
+        verified: false,
+      },
     });
 
     // Return the image and the text-based secret
@@ -42,11 +42,13 @@ export class IamFeatureMfaService {
   async verifyAndEnable(userId: string, code: string) {
     // Find the pending setup
     const factor = await this.prisma.mfaFactor.findFirst({
-      where: { userId, type: 'TOTP', verified: false }
+      where: { userId, type: 'TOTP', verified: false },
     });
 
     if (!factor || !factor.secret) {
-      throw new BadRequestException('No MFA enrollment process found. Please start setup first.');
+      throw new BadRequestException(
+        'No MFA enrollment process found. Please start setup first.',
+      );
     }
 
     // ✨ Mathematically verify the 6-digit code! (window: 1 allows 30 seconds of clock drift)
@@ -54,7 +56,7 @@ export class IamFeatureMfaService {
       secret: factor.secret,
       encoding: 'base32',
       token: code,
-      window: 1 
+      window: 1,
     });
 
     if (!isValid) {
@@ -64,7 +66,7 @@ export class IamFeatureMfaService {
     // Success! Lock it in as VERIFIED in the database.
     await this.prisma.mfaFactor.update({
       where: { id: factor.id },
-      data: { verified: true }
+      data: { verified: true },
     });
 
     return { success: true, message: 'MFA successfully enabled!' };

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldCheck  } from 'lucide-react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 export function LoginForm() {
@@ -13,8 +13,11 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const AUTH_API =
-    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  // ✨ MFA States
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+
+  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
   const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,31 +31,68 @@ export function LoginForm() {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.message || 'Invalid email or password');
+        throw new Error(data.message || 'Invalid email or password');
       }
 
-      const data = await res.json();
-      localStorage.setItem('access_token', data.access_token);
+      // ✨ CHECK FOR MFA CHALLENGE!
+      if (data.mfa_required) {
+        setMfaToken(data.mfa_token);
+        toast.info('Please enter your authenticator code.');
+        return; // Stop here and wait for the user to type the 6 digits!
+      }
 
+      // NO MFA REQUIRED -> Log them straight in
+      localStorage.setItem('access_token', data.access_token);
+      if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
+      
       toast.success('Successfully logged in!');
       router.push('/');
+
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(err.message); // ✨ Premium toast instead of ugly red text!
-      } else {
-        toast.error('An unexpected error occurred');
-      }
+      if (err instanceof Error) toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  // ---------------------------------------------------------------------------
+  // 2. MFA LOGIN
+  // ---------------------------------------------------------------------------
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${AUTH_API}/auth/login/mfa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mfa_token: mfaToken, code: mfaCode }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Invalid 6-digit code');
+
+      // Success! Lock it in.
+      localStorage.setItem('access_token', data.access_token);
+      if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
+      
+      toast.success('Successfully authenticated!');
+      router.push('/');
+
+    } catch (err: unknown) {
+      if (err instanceof Error) toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   // ✨ Handle the Google Login Success!
-  const handleGoogleSuccess = async (credentialResponse: {
-    credential?: string;
-  }) => {
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
     try {
       // 1. Send the Google Token to our NestJS API
       const res = await fetch(`${AUTH_API}/auth/google`, {
@@ -66,6 +106,8 @@ export function LoginForm() {
       // 2. We get back our HelloKitty JWT!
       const data = await res.json();
       localStorage.setItem('access_token', data.access_token);
+      if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
+
 
       toast.success('Successfully logged in with Google!');
       router.push('/');
@@ -75,22 +117,69 @@ export function LoginForm() {
   };
 
   return (
-    <GoogleOAuthProvider
-      clientId={GOOGLE_CLIENT_ID || 'dummy-id-to-prevent-crash'}
-    >
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID || 'dummy-id-to-prevent-crash'}>
       <div className="flex min-h-screen bg-white font-sans">
         {/* Left Pane - Form Area */}
         <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:w-[480px] xl:w-[560px] relative">
+
           <div className="absolute top-8 left-8">
-            <Link
-              href="/"
-              className="text-2xl font-black tracking-tighter italic select-none text-gray-900"
-            >
+            <Link href="/" className="text-2xl font-black tracking-tighter italic select-none text-gray-900">
               HelloKitty.
             </Link>
           </div>
 
           <div className="mx-auto w-full max-w-sm lg:w-96">
+
+            {/* ✨ CONDITIONALLY RENDER THE MFA SCREEN IF A TOKEN EXISTS */}
+            {mfaToken ? (
+              <div className="animate-in fade-in zoom-in-95 duration-300">
+                <div className="text-center mb-8">
+                  <div className="mx-auto w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center mb-4">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+                    Two-Step Verification
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Enter the 6-digit code from your authenticator app.
+                  </p>
+                </div>
+
+                <form onSubmit={handleMfaSubmit} className="space-y-5">
+                  <div>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      maxLength={6}
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value)}
+                      className="block w-full text-center text-2xl tracking-[0.5em] font-mono rounded-xl border-0 py-3.5 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-300 focus:ring-2 focus:ring-inset focus:ring-pink-400 outline-none"
+                      placeholder="000000"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || mfaCode.length < 6}
+                    className="flex w-full justify-center items-center gap-2 rounded-full bg-[#0d0c22] py-3.5 px-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 disabled:opacity-70 transition-all"
+                  >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {loading ? 'Verifying...' : 'Verify Code'}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setMfaToken(null)}
+                    className="w-full text-center text-sm font-medium text-gray-500 hover:text-gray-900 mt-4"
+                  >
+                    Cancel and go back
+                  </button>
+                </form>
+              </div>
+            ) : (
+              // ✨ OTHERWISE, SHOW THE STANDARD LOGIN SCREEN
+              <div className="animate-in fade-in duration-300">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold tracking-tight text-gray-900">
                 Welcome back
@@ -188,6 +277,9 @@ export function LoginForm() {
                 </Link>
               </p>
             </div>
+          </div>
+         )}
+
           </div>
         </div>
 

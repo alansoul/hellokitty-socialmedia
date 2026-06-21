@@ -19,7 +19,10 @@ export class IamFeatureMfaController {
   }
 
   @Post('verify')
-  async verifyMfa(@Req() req: AuthenticatedRequest, @Body() body: { code: string }) {
+  async verifyMfa(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { code: string },
+  ) {
     return this.mfaService.verifyAndEnable(req.user.sub, body.code);
   }
 }

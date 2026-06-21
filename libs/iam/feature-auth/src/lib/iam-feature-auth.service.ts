@@ -8,6 +8,7 @@ import { IamPrismaService } from '@hellokitty/data-access';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library'; // ✨ Added Google Library
+import * as speakeasy from 'speakeasy';
 
 @Injectable()
 export class IamFeatureAuthService {
@@ -20,6 +21,10 @@ export class IamFeatureAuthService {
     // Initialize the Google Client with your future Client ID
     this.googleClient = new OAuth2Client(process.env['GOOGLE_CLIENT_ID']);
   }
+
+  // -------------------------------------------------------------
+  // SIGNUP METHOD
+  // -------------------------------------------------------------
 
   async signup(email: string, passwordPlain: string) {
     // 1. Ensure the user doesn't already exist
@@ -70,12 +75,15 @@ export class IamFeatureAuthService {
   }
 
   // -------------------------------------------------------------
-  // LOGIN METHOD
+  // LOGIN METHOD (✨ UPGRADED FOR MFA)
   // -------------------------------------------------------------
   async login(email: string, passwordPlain: string) {
     const user = await this.prisma.user.findFirst({
       where: { email },
-      include: { credentials: true },
+      include: { 
+        credentials: true,
+        mfaFactors: { where: { verified: true } } // ✅ Moved INSIDE the include block!
+      },
     });
 
     if (!user) {
@@ -87,6 +95,11 @@ export class IamFeatureAuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    // ✨ FIX: Make sure the user actually sent a password before comparing!
+    if (!passwordPlain) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
     const isPasswordValid = await bcrypt.compare(
       passwordPlain,
       passwordCred.passwordHash,
@@ -95,10 +108,71 @@ export class IamFeatureAuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    // ✨ MFA CHECK: Does the user have a verified TOTP setup?
+    if (user.mfaFactors && user.mfaFactors.length > 0) {
+      // DO NOT issue an access token. Issue a 5-minute temporary MFA token!
+      const mfaPayload = { sub: user.id, mfa_required: true };
+      const mfaToken = await this.jwtService.signAsync(mfaPayload, { expiresIn: '5m' });
+      
+      return {
+        mfa_required: true,
+        mfa_token: mfaToken,
+        message: 'Please provide your 6-digit authenticator code.'
+      };
+    }
+
+    // No MFA enabled? Log them straight in!
     // ✨ Use the shared helper function
     return this.generateTokens(user.id, user.email, user.tenantId);
   }
 
+  // -------------------------------------------------------------
+  // VERIFY MFA LOGIN METHOD (✨ NEW!)
+  // -------------------------------------------------------------
+  async verifyMfaLogin(mfaToken: string, code: string) {
+    let payload;
+    try {
+      // Verify the temporary 5-minute token
+      payload = await this.jwtService.verifyAsync(mfaToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired MFA token');
+    }
+
+    // Ensure it's actually an MFA token, not a standard access token
+    if (!payload.mfa_required) {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { mfaFactors: { where: { verified: true } } }
+    });
+
+    if (!user || !user.mfaFactors || user.mfaFactors.length === 0) {
+      throw new UnauthorizedException('MFA is not enabled for this user');
+    }
+
+    const factor = user.mfaFactors[0];
+
+    // ✨ FIX: Safely check if secret exists to satisfy ESLint
+    if (!factor.secret) {
+      throw new UnauthorizedException('MFA configuration is broken or missing secret');
+    }
+
+    // ✨ Mathematically verify the 6-digit code
+    const isValid = speakeasy.totp.verify({
+      secret: factor.secret, // No more '!' needed here!
+      encoding: 'base32',
+      token: code,
+      window: 1 
+    });
+
+    if (!isValid) throw new UnauthorizedException('Invalid 6-digit code');
+
+    // Code is perfect! Issue the real JWTs.
+    return this.generateTokens(user.id, user.email, user.tenantId);
+  }
+  
   // -------------------------------------------------------------
   // GOOGLE LOGIN METHOD
   // -------------------------------------------------------------

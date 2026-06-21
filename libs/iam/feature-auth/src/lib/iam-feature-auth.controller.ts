@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException  } from '@nestjs/common';
 import { IamFeatureAuthService } from './iam-feature-auth.service';
 
 // ✨ Renamed to AuthDto since both signup and login need an email & password
@@ -24,5 +24,12 @@ export class IamFeatureAuthController {
   @Post('google')
   async googleLogin(@Body() body: { token: string }) {
     return this.authService.loginWithGoogle(body.token);
+  }
+  @Post('login/mfa')
+  async loginWithMfa(@Body() body: { mfa_token: string; code: string }) {
+    if (!body.mfa_token || !body.code) {
+      throw new UnauthorizedException('mfa_token and code are required');
+    }
+    return this.authService.verifyMfaLogin(body.mfa_token, body.code);
   }
 }
