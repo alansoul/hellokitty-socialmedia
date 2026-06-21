@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Param, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { IamFeatureRbacService } from './iam-feature-rbac.service';
 import { JwtAuthGuard } from '@hellokitty/shared-security';
 import { Request } from 'express';
@@ -22,8 +30,13 @@ export class IamFeatureRbacController {
     @Param('orgId') orgId: string,
     @Param('userId') userId: string,
     @Body() body: { role: string },
-    @Req() req: AuthRequest
+    @Req() req: AuthRequest,
   ) {
-    return this.rbacService.updateMemberRole(req.user.sub, orgId, userId, body.role);
+    return this.rbacService.updateMemberRole(
+      req.user.sub,
+      orgId,
+      userId,
+      body.role,
+    );
   }
 }

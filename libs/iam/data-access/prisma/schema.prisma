@@ -20,6 +20,7 @@ model Tenant {
   applications  Application[]
   users         User[]
   organizations Organization[]
+  auditLogs     AuditLog[]
 
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -157,4 +158,22 @@ model Session {
 
   @@index([userId])
   @@map("sessions")
+}
+
+// -----------------------------------------------------------------------------
+// 5. AUDIT LOGS (Compliance & Security)
+// -----------------------------------------------------------------------------
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid @map("tenant_id")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  action    String   // e.g., "user.login", "org.created"
+  actor     String?  // The Email or ID of the person who did it
+  details   String?  // Extra info (like the App Name)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("audit_logs")
 }

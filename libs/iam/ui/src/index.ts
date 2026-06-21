@@ -8,3 +8,4 @@ export * from './lib/applications/applications-view';
 export * from './lib/users/users-view';
 export * from './lib/organizations/organizations-view';
 export * from './lib/authorize/authorize-view';
+export * from './lib/logs-table/logs-view';

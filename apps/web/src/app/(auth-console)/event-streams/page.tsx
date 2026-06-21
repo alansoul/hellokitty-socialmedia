@@ -1,3 +1,5 @@
-export default function Page() {
-  return <div>apps\web\src\app\(auth-console)\event-streams</div>;
+import { LogsView } from '@hellokitty/iam-ui';
+
+export default function LogsPage() {
+  return <LogsView />;
 }
