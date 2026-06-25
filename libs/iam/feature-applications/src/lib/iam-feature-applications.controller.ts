@@ -21,7 +21,12 @@ export class IamFeatureApplicationsController {
     const tenantId = req.user.tenantId;
     const email = req.user.email; // ✨ Grab the user's email
 
-    return this.appsService.createApplication(tenantId, body.name, body.type, email);
+    return this.appsService.createApplication(
+      tenantId,
+      body.name,
+      body.type,
+      email,
+    );
   }
 
   @Get()

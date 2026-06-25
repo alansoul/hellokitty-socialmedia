@@ -12,7 +12,7 @@ interface AuthenticatedRequest extends Request {
 export class IamFeatureMfaController {
   constructor(private readonly mfaService: IamFeatureMfaService) {}
 
-   // ✨ NEW: Fetch MFA Status
+  // ✨ NEW: Fetch MFA Status
   @Get('status')
   async getMfaStatus(@Req() req: AuthenticatedRequest) {
     return this.mfaService.getMfaStatus(req.user.sub);
@@ -32,7 +32,7 @@ export class IamFeatureMfaController {
     return this.mfaService.verifyAndEnable(req.user.sub, body.code);
   }
 
-   // ✨ NEW: Disable MFA
+  // ✨ NEW: Disable MFA
   @Post('disable')
   async disableMfa(@Req() req: AuthenticatedRequest) {
     return this.mfaService.disableMfa(req.user.sub);

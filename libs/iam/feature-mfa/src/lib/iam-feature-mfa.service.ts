@@ -18,21 +18,21 @@ export class IamFeatureMfaService {
 
   // 1. SETUP: Generate the Secret and QR Code
   async generateSecret(userId: string, email: string) {
-    // ✨ FIX: Increased length to 20 bytes (160 bits). 
+    // ✨ FIX: Increased length to 20 bytes (160 bits).
     // This generates exactly 32 Base32 characters with NO '=' padding.
     // Google Authenticator requires >= 128 bits and often fails on padding!
     const secret = speakeasy.generateSecret({
-      length: 20, 
+      length: 20,
     });
 
     // ✨ Production Polish 1: Force Base32 to UPPERCASE (RFC 4648 compliance)
     // This prevents manual-entry failures on strict or older authenticator devices.
-    const base32Secret = secret.base32.toUpperCase(); 
+    const base32Secret = secret.base32.toUpperCase();
 
     const issuer = 'HelloKitty';
     const cleanEmail = email.trim();
 
-   // ✨ Production Polish 2: Standard-Compliant OIDC URI Formatting
+    // ✨ Production Polish 2: Standard-Compliant OIDC URI Formatting
     // We encode the Issuer and Email individually, leaving the colon separator unencoded.
     const label = `${encodeURIComponent(issuer)}:${encodeURIComponent(cleanEmail)}`;
     const otpauthUrl = `otpauth://totp/${label}?secret=${base32Secret}&issuer=${encodeURIComponent(issuer)}`;

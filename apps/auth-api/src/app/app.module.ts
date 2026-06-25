@@ -25,7 +25,6 @@ import { IamFeatureLogsModule } from '@hellokitty/iam-feature-logs';
     IamFeatureMfaModule,
     IamFeatureRbacModule,
     IamFeatureLogsModule,
-    
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -19,7 +19,8 @@ function AuthorizeContent() {
 
   // ✨ Read the PKCE challenge fields from the URL parameters
   const codeChallenge = searchParams.get('code_challenge');
-  const codeChallengeMethod = searchParams.get('code_challenge_method') || 'S256';
+  const codeChallengeMethod =
+    searchParams.get('code_challenge_method') || 'S256';
 
   const AUTH_API =
     process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
@@ -28,7 +29,9 @@ function AuthorizeContent() {
     const token = localStorage.getItem('access_token');
     if (!token) {
       // Pass the current full URL so the login page knows where to send them back!
-      const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+      const currentUrl = encodeURIComponent(
+        window.location.pathname + window.location.search,
+      );
       router.push(`/login?returnTo=${currentUrl}`);
     } else {
       setCheckingAuth(false);
@@ -55,8 +58,8 @@ function AuthorizeContent() {
         body: JSON.stringify({
           client_id: clientId,
           redirect_uri: redirectUri,
-          code_challenge: codeChallenge,                // ✨ Forward challenge
-          code_challenge_method: codeChallengeMethod,   // ✨ Forward method
+          code_challenge: codeChallenge, // ✨ Forward challenge
+          code_challenge_method: codeChallengeMethod, // ✨ Forward method
         }),
         credentials: 'include', // ✨ REQUIRED for cross-origin cookies!
       });

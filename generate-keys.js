@@ -7,12 +7,12 @@ const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
   modulusLength: 2048,
   publicKeyEncoding: {
     type: 'spki',
-    format: 'pem'
+    format: 'pem',
   },
   privateKeyEncoding: {
     type: 'pkcs8',
-    format: 'pem'
-  }
+    format: 'pem',
+  },
 });
 
 // 1. Save the raw files to disk
@@ -24,7 +24,11 @@ const envPrivateKey = privateKey.replace(/\r?\n/g, '\\n');
 const envPublicKey = publicKey.replace(/\r?\n/g, '\\n');
 
 console.log('✅ Keys generated and saved to private.pem and public.pem!');
-console.log('\n================ COPY THESE LINES TO YOUR .env FILE ================');
+console.log(
+  '\n================ COPY THESE LINES TO YOUR .env FILE ================',
+);
 console.log(`JWT_PRIVATE_KEY="${envPrivateKey}"`);
 console.log(`JWT_PUBLIC_KEY="${envPublicKey}"`);
-console.log('====================================================================\n');
+console.log(
+  '====================================================================\n',
+);

@@ -38,12 +38,13 @@ export class IamFeatureOauthController {
   @Post('authorize')
   @UseGuards(JwtAuthGuard) // Must be logged in to HelloKitty!
   async authorize(
-    @Body() body: { 
-      client_id: string; 
+    @Body()
+    body: {
+      client_id: string;
       redirect_uri: string;
       code_challenge?: string;
       code_challenge_method?: 'plain' | 'S256';
-     },
+    },
     @Req() req: AuthRequest,
   ) {
     const code = await this.oauthService.generateAuthorizationCode(
@@ -51,7 +52,7 @@ export class IamFeatureOauthController {
       body.client_id,
       body.redirect_uri,
       body.code_challenge,
-      body.code_challenge_method
+      body.code_challenge_method,
     );
     return { code };
   }
@@ -70,18 +71,20 @@ export class IamFeatureOauthController {
       redirect_uri?: string;
       code_verifier?: string;
     },
-    @Res({ passthrough: true }) res: CookieResponse // ✨ Use our decoupled type 
+    @Res({ passthrough: true }) res: CookieResponse, // ✨ Use our decoupled type
   ) {
     if (body['grant_type'] === 'authorization_code') {
       if (!body['client_id'] || !body['code'] || !body['redirect_uri']) {
-        throw new UnauthorizedException('Missing required parameters for authorization_code');
+        throw new UnauthorizedException(
+          'Missing required parameters for authorization_code',
+        );
       }
       const data = await this.oauthService.exchangeToken(
         body['client_id'],
         body['client_secret'] || null,
         body['code'],
         body['redirect_uri'],
-        body['code_verifier'] // ✨ Fixed: Forwarding the code verifier!
+        body['code_verifier'], // ✨ Fixed: Forwarding the code verifier!
       );
       this.setAuthCookies(res, data.access_token, data.refresh_token);
       return data;
@@ -92,7 +95,9 @@ export class IamFeatureOauthController {
       if (!body['refresh_token']) {
         throw new UnauthorizedException('Missing refresh_token');
       }
-      const data = await this.oauthService.refreshAccessToken(body['refresh_token']);
+      const data = await this.oauthService.refreshAccessToken(
+        body['refresh_token'],
+      );
       this.setAuthCookies(res, data.access_token, data.refresh_token);
       return data;
     }
@@ -100,7 +105,11 @@ export class IamFeatureOauthController {
     // If they ask for a grant_type we don't support yet (like client_credentials)
     throw new UnauthorizedException('Unsupported grant_type');
   }
-  private setAuthCookies(res: CookieResponse, accessToken: string, refreshToken?: string) {
+  private setAuthCookies(
+    res: CookieResponse,
+    accessToken: string,
+    refreshToken?: string,
+  ) {
     const isProduction = process.env['NODE_ENV'] === 'production';
 
     res.cookie('access_token', accessToken, {
@@ -122,4 +131,3 @@ export class IamFeatureOauthController {
     }
   }
 }
-

@@ -12,7 +12,7 @@ async function bootstrap() {
   if (!publicKey) {
     logger.error(
       '❌ CRITICAL ERROR: JWT_PUBLIC_KEY is undefined in social-api! ' +
-      'Please ensure you copied the public key into the ROOT .env file.'
+        'Please ensure you copied the public key into the ROOT .env file.',
     );
   } else {
     logger.log('🔑 JWT_PUBLIC_KEY successfully loaded into social-api memory.');
@@ -23,7 +23,6 @@ async function bootstrap() {
   // ✨ Activate Cookie Parser Middleware
   app.use(cookieParser());
 
-
   // ✨ Allow both localhost and Vercel to access this API
   const allowedOrigins = [
     'http://localhost:3000',
@@ -32,7 +31,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: allowedOrigins,
-    credentials: true,  // Required to allow cookies to traverse across ports!
+    credentials: true, // Required to allow cookies to traverse across ports!
   });
 
   const globalPrefix = 'api';

@@ -1,4 +1,10 @@
-import { Controller, Post, Body, UnauthorizedException, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UnauthorizedException,
+  Res,
+} from '@nestjs/common';
 import { IamFeatureAuthService } from './iam-feature-auth.service';
 
 // ✨ Local Interface: Decouples our library from the Express package
@@ -16,7 +22,6 @@ interface CookieResponse {
   ): this;
 }
 
-
 // ✨ Renamed to AuthDto since both signup and login need an email & password
 class AuthDto {
   email!: string;
@@ -25,7 +30,7 @@ class AuthDto {
 
 @Controller('auth')
 export class IamFeatureAuthController {
-  constructor(private readonly authService: IamFeatureAuthService) { }
+  constructor(private readonly authService: IamFeatureAuthService) {}
 
   @Post('signup')
   async signup(@Body() body: AuthDto) {
@@ -35,7 +40,7 @@ export class IamFeatureAuthController {
   @Post('login')
   async login(
     @Body() body: AuthDto,
-    @Res({ passthrough: true }) res: CookieResponse // ✨ Use our decoupled type
+    @Res({ passthrough: true }) res: CookieResponse, // ✨ Use our decoupled type
   ) {
     const data = await this.authService.login(body.email, body.password);
     // If login was successful (and not redirected for MFA)
@@ -44,14 +49,14 @@ export class IamFeatureAuthController {
       this.setAuthCookies(res, data.access_token, data.refresh_token);
     }
 
-
     return data;
   }
 
   // ✨ NEW: Google Social Login Endpoint!
   @Post('google')
-  async googleLogin(@Body() body: { token: string },
-    @Res({ passthrough: true }) res: CookieResponse
+  async googleLogin(
+    @Body() body: { token: string },
+    @Res({ passthrough: true }) res: CookieResponse,
   ) {
     const data = await this.authService.loginWithGoogle(body.token);
     this.setAuthCookies(res, data.access_token, data.refresh_token);
@@ -60,18 +65,25 @@ export class IamFeatureAuthController {
   @Post('login/mfa')
   async loginWithMfa(
     @Body() body: { mfa_token: string; code: string },
-    @Res({ passthrough: true }) res: CookieResponse
+    @Res({ passthrough: true }) res: CookieResponse,
   ) {
     if (!body.mfa_token || !body.code) {
       throw new UnauthorizedException('mfa_token and code are required');
     }
-    const data = await this.authService.verifyMfaLogin(body.mfa_token, body.code);
+    const data = await this.authService.verifyMfaLogin(
+      body.mfa_token,
+      body.code,
+    );
     this.setAuthCookies(res, data.access_token, data.refresh_token);
     return data;
   }
 
   // ✨ Helper to write production-secure HttpOnly cookies
-  private setAuthCookies(res: CookieResponse, accessToken: string, refreshToken?: string) {
+  private setAuthCookies(
+    res: CookieResponse,
+    accessToken: string,
+    refreshToken?: string,
+  ) {
     const isProduction = process.env['NODE_ENV'] === 'production';
 
     res.cookie('access_token', accessToken, {

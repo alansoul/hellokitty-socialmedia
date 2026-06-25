@@ -10,15 +10,15 @@ services:
     routes:
       - name: auth-routes
         paths:
-          - /api/auth           # Signup, Login, MFA
-          - /api/oauth          # Authorize, Token exchange
-          - /api/.well-known    # OIDC Discovery & JWKS key board
-          - /api/oidc           # UserInfo Profile endpoint
-          - /api/users          # Admin user directory
-          - /api/applications   # Admin applications registry
-          - /api/organizations  # Admin B2B workspaces
-          - /api/logs           # Admin immutable auditing logs
-        strip_path: false       # Keeps the '/api' prefix when routing to NestJS
+          - /api/auth # Signup, Login, MFA
+          - /api/oauth # Authorize, Token exchange
+          - /api/.well-known # OIDC Discovery & JWKS key board
+          - /api/oidc # UserInfo Profile endpoint
+          - /api/users # Admin user directory
+          - /api/applications # Admin applications registry
+          - /api/organizations # Admin B2B workspaces
+          - /api/logs # Admin immutable auditing logs
+        strip_path: false # Keeps the '/api' prefix when routing to NestJS
 
   # -----------------------------------------------------
   # 2. SOCIAL API GATEWAY (Feed, Posts, Comments, Profiles)

@@ -2,7 +2,14 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, ChevronDown, Check, Plus, Settings, Shield } from 'lucide-react';
+import {
+  Building2,
+  ChevronDown,
+  Check,
+  Plus,
+  Settings,
+  Shield,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Organization {
@@ -18,7 +25,8 @@ export function OrgSwitcher() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
-  const AUTH_API = process.env['NEXT_PUBLIC_AUTH_API_URL'] || 'http://localhost:3001/api';
+  const AUTH_API =
+    process.env['NEXT_PUBLIC_AUTH_API_URL'] || 'http://localhost:3001/api';
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -28,6 +36,7 @@ export function OrgSwitcher() {
 
         const res = await fetch(`${AUTH_API}/organizations`, {
           headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include', // ✨ Added: Required to pass secure cookies across origins!
         });
 
         if (res.status === 401) {
@@ -61,7 +70,10 @@ export function OrgSwitcher() {
 
     // Close dropdown on click outside
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -75,7 +87,7 @@ export function OrgSwitcher() {
     localStorage.setItem('active_org_id', org.id);
     setIsOpen(false);
     toast.success(`Switched active workspace to: ${org.name}`);
-    
+
     // Refresh the page to reload active dashboard queries under this new context
     router.refresh();
   };
@@ -126,7 +138,9 @@ export function OrgSwitcher() {
                           {org.myRole}
                         </span>
                       </div>
-                      {isSelected && <Check className="w-4 h-4 text-green-500 shrink-0" />}
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-green-500 shrink-0" />
+                      )}
                     </button>
                   </li>
                 );

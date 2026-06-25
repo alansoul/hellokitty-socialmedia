@@ -41,8 +41,8 @@ export class IamFeatureOidcService {
     try {
       // Create a native public key object
       const keyObject = crypto.createPublicKey(publicKeyPem);
-      
-      // Export directly to JWK format! 
+
+      // Export directly to JWK format!
       const jwk = keyObject.export({ format: 'jwk' });
 
       // Add standard OIDC parameters with nullish coalescing fallback

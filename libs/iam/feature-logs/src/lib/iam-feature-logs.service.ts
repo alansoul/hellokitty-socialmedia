@@ -9,12 +9,27 @@ export class IamFeatureLogsService {
   // ✨ This method now automatically triggers whenever ANY file emits an 'audit.*' event!
   // ✨ 1. The Event Bus Listener (Automatically catches events from other modules)
   @OnEvent('audit.*')
-  async handleAuditLog(event: { tenantId: string; action: string; actor: string; details: string }) {
-    await this.logEvent(event.tenantId, event.action, event.actor, event.details);
+  async handleAuditLog(event: {
+    tenantId: string;
+    action: string;
+    actor: string;
+    details: string;
+  }) {
+    await this.logEvent(
+      event.tenantId,
+      event.action,
+      event.actor,
+      event.details,
+    );
   }
 
   // ✨ 2. The Direct Writer (Used by the controller for manual test events)
-  async logEvent(tenantId: string, action: string, actor: string, details?: string) {
+  async logEvent(
+    tenantId: string,
+    action: string,
+    actor: string,
+    details?: string,
+  ) {
     return this.prisma.auditLog.create({
       data: { tenantId, action, actor, details },
     });

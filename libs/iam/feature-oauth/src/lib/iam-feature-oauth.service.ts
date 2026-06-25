@@ -19,7 +19,7 @@ export class IamFeatureOauthService {
     clientId: string,
     redirectUri: string,
     codeChallenge?: string,
-    codeChallengeMethod?: 'plain' | 'S256'
+    codeChallengeMethod?: 'plain' | 'S256',
   ) {
     const app = await this.prisma.application.findUnique({
       where: { clientId },
@@ -32,11 +32,13 @@ export class IamFeatureOauthService {
     // Save to Cache (Expires in 60 seconds / 60000ms)
     await this.cacheManager.set(
       `auth_code:${code}`,
-      { userId, 
-        clientId, 
-        redirectUri, 
+      {
+        userId,
+        clientId,
+        redirectUri,
         codeChallenge,
-        codeChallengeMethod: codeChallengeMethod || 'S256' },
+        codeChallengeMethod: codeChallengeMethod || 'S256',
+      },
       60000,
     );
 
@@ -44,24 +46,24 @@ export class IamFeatureOauthService {
   }
 
   private verifyCodeVerifier(
-  verifier: string,
-  challenge: string,
-  method: 'plain' | 'S256'
-): boolean {
-  if (method === 'plain') {
-    return verifier === challenge;
-  }
-  
-  // SHA-256 Hash and Base64URL encode the verifier
-  const hash = crypto.createHash('sha256').update(verifier).digest();
-  const base64Url = hash
-    .toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
+    verifier: string,
+    challenge: string,
+    method: 'plain' | 'S256',
+  ): boolean {
+    if (method === 'plain') {
+      return verifier === challenge;
+    }
 
-  return base64Url === challenge;
-}
+    // SHA-256 Hash and Base64URL encode the verifier
+    const hash = crypto.createHash('sha256').update(verifier).digest();
+    const base64Url = hash
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+
+    return base64Url === challenge;
+  }
 
   // 2. EXCHANGE THE CODE FOR A TOKEN
   async exchangeToken(
@@ -69,7 +71,7 @@ export class IamFeatureOauthService {
     clientSecret: string | null,
     code: string,
     redirectUri: string,
-    codeVerifier?: string // ✨ Accept code_verifier
+    codeVerifier?: string, // ✨ Accept code_verifier
   ) {
     const app = await this.prisma.application.findUnique({
       where: { clientId },
@@ -101,21 +103,24 @@ export class IamFeatureOauthService {
       cachedData.redirectUri !== redirectUri
     ) {
       throw new UnauthorizedException(
-        'Code mismatch or hijack attempt detected');
-      }
-        // ✨ CRYPTOGRAPHIC PKCE CHECK
-  if (cachedData.codeChallenge) {
-    if (!codeVerifier) {
-      throw new UnauthorizedException('Code verifier is required for PKCE-enabled clients');
+        'Code mismatch or hijack attempt detected',
+      );
     }
-    const isPkceValid = this.verifyCodeVerifier(
-      codeVerifier,
-      cachedData.codeChallenge,
-      cachedData.codeChallengeMethod || 'S256'
+    // ✨ CRYPTOGRAPHIC PKCE CHECK
+    if (cachedData.codeChallenge) {
+      if (!codeVerifier) {
+        throw new UnauthorizedException(
+          'Code verifier is required for PKCE-enabled clients',
+        );
+      }
+      const isPkceValid = this.verifyCodeVerifier(
+        codeVerifier,
+        cachedData.codeChallenge,
+        cachedData.codeChallengeMethod || 'S256',
       );
       if (!isPkceValid) {
-      throw new UnauthorizedException('Invalid PKCE code_verifier');
-    }
+        throw new UnauthorizedException('Invalid PKCE code_verifier');
+      }
     }
 
     // Issue the standard JWT Token!

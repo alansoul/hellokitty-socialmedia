@@ -7,17 +7,22 @@ import { Loader2 } from 'lucide-react'; // ✨ For a beautiful loading spinner
 const SOCIAL_API =
   process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
 // ✨ Define where the Auth App lives
-const AUTH_APP_URL = process.env.NEXT_PUBLIC_AUTH_APP_URL || 'http://localhost:3004';
+const AUTH_APP_URL =
+  process.env.NEXT_PUBLIC_AUTH_APP_URL || 'http://localhost:3004';
 
 // ✨ PKCE helper: Generates a high-entropy cryptographically random string (code_verifier)
 function generateCodeVerifier(): string {
+  if (typeof window === 'undefined' || !window.crypto) return ''; // Guard
   const array = new Uint32Array(56);
   window.crypto.getRandomValues(array);
-  return Array.from(array, dec => ('0' + dec.toString(16)).substring(-2)).join('');
+  return Array.from(array, (dec) =>
+    ('0' + dec.toString(16)).substring(-2),
+  ).join('');
 }
 
 // ✨ PKCE helper: Hashes the verifier with SHA-256 and base64url encodes it (code_challenge)
 async function generateCodeChallenge(verifier: string): Promise<string> {
+  if (typeof window === 'undefined' || !verifier) return ''; // Guard
   const encoder = new TextEncoder();
   const data = encoder.encode(verifier);
   const hash = await window.crypto.subtle.digest('SHA-256', data);
@@ -87,7 +92,9 @@ export default function Feed() {
         return;
       }
 
-      if (!response.ok) { throw new Error('Failed to fetch posts'); }
+      if (!response.ok) {
+        throw new Error('Failed to fetch posts');
+      }
       const data = await response.json();
       setPosts(data);
     } catch (error) {

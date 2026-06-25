@@ -20,7 +20,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: allowedOrigins,
-    credentials: true,  // Required to allow cookies to traverse across ports!
+    credentials: true, // Required to allow cookies to traverse across ports!
   });
 
   const globalPrefix = 'api';
@@ -28,7 +28,9 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
 
   await app.listen(port);
-  logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,);
+  logger.log(
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+  );
 }
 
 bootstrap();

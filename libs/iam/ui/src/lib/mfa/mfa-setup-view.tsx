@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Loader2, QrCode, Lock, CheckCircle2, Copy } from 'lucide-react';
+import {
+  ShieldCheck,
+  Loader2,
+  QrCode,
+  Lock,
+  CheckCircle2,
+  Copy,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 // ✨ Helper to chunk long base32 strings into readable 4-character blocks
@@ -20,7 +27,8 @@ export function MfaSetupView() {
   const [disabling, setDisabling] = useState(false);
 
   const router = useRouter();
-  const AUTH_API = process.env['NEXT_PUBLIC_AUTH_API_URL'] || 'http://localhost:3001/api';
+  const AUTH_API =
+    process.env['NEXT_PUBLIC_AUTH_API_URL'] || 'http://localhost:3001/api';
 
   const checkMfaStatus = async () => {
     try {
@@ -129,7 +137,9 @@ export function MfaSetupView() {
   };
 
   const handleDisableMfa = async () => {
-    const confirm = window.confirm('Are you absolutely sure you want to disable 2FA? This will lower your account security.');
+    const confirm = window.confirm(
+      'Are you absolutely sure you want to disable 2FA? This will lower your account security.',
+    );
     if (!confirm) return;
 
     setDisabling(true);
@@ -170,7 +180,9 @@ export function MfaSetupView() {
   return (
     <div className="space-y-6 font-sans">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Multi-Factor Authentication (MFA)</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          Multi-Factor Authentication (MFA)
+        </h2>
         <p className="text-gray-500 mt-1">
           Add an extra layer of security to your identity account.
         </p>
@@ -187,9 +199,12 @@ export function MfaSetupView() {
                 <ShieldCheck className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Secure Your Account</h3>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Secure Your Account
+                </h3>
                 <p className="text-gray-500 mt-1 text-sm leading-relaxed">
-                  Two-factor authentication adds an extra layer of security to your account by requiring more than just a password to log in.
+                  Two-factor authentication adds an extra layer of security to
+                  your account by requiring more than just a password to log in.
                 </p>
               </div>
             </div>
@@ -215,9 +230,12 @@ export function MfaSetupView() {
                 <QrCode className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-900">Configure Authenticator App</h3>
+                <h3 className="text-base font-bold text-gray-900">
+                  Configure Authenticator App
+                </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Scan the QR code below using Google Authenticator, Microsoft Authenticator, or Duo.
+                  Scan the QR code below using Google Authenticator, Microsoft
+                  Authenticator, or Duo.
                 </p>
               </div>
             </div>
@@ -228,9 +246,12 @@ export function MfaSetupView() {
                 <img src={qrCode} alt="MFA QR Code" className="w-40 h-40" />
               </div>
               <div className="space-y-3 w-full min-w-0">
-                <p className="text-sm font-semibold text-gray-800">Can't scan the code?</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  Can't scan the code?
+                </p>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Enter this secret key manually into your authenticator app instead:
+                  Enter this secret key manually into your authenticator app
+                  instead:
                 </p>
                 <div className="flex items-center gap-2 w-full max-w-xs sm:max-w-none">
                   {/* ✨ Fixed: Added break-all, text-sm, selection, and formatted text into 4-char chunks */}
@@ -300,9 +321,12 @@ export function MfaSetupView() {
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-gray-900">MFA is Now Active!</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                MFA is Now Active!
+              </h3>
               <p className="text-gray-500 text-sm max-w-sm mx-auto leading-relaxed">
-                Your account is secure. The next time you log in, you will be prompted to enter the 6-digit code from your authenticator app.
+                Your account is secure. The next time you log in, you will be
+                prompted to enter the 6-digit code from your authenticator app.
               </p>
             </div>
 
@@ -329,13 +353,16 @@ export function MfaSetupView() {
                   Two-Factor Authentication is Enabled
                 </h3>
                 <p className="text-gray-500 mt-1 text-sm leading-relaxed">
-                  Your account is protected by an Authenticator app (TOTP). Your verification status is active.
+                  Your account is protected by an Authenticator app (TOTP). Your
+                  verification status is active.
                 </p>
               </div>
             </div>
 
             <div className="border-t border-gray-100 pt-6 flex justify-between items-center">
-              <span className="text-xs text-gray-400 font-mono">Factor type: app-based (TOTP)</span>
+              <span className="text-xs text-gray-400 font-mono">
+                Factor type: app-based (TOTP)
+              </span>
               <button
                 onClick={handleDisableMfa}
                 disabled={disabling}

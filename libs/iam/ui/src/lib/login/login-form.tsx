@@ -12,7 +12,6 @@ function LoginFormContent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-
   // ✨ MFA States
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState('');
@@ -23,7 +22,8 @@ function LoginFormContent() {
   // ✨ Check where the user wants to go after login (default to dashboard)
   const returnTo = searchParams.get('returnTo') || '/dashboard';
 
-  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
   const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
   // ✨ HELPER: Execute the dynamic redirect!
@@ -34,7 +34,6 @@ function LoginFormContent() {
       router.push(returnTo); // Local domain to Admin Dashboard
     }
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +67,6 @@ function LoginFormContent() {
 
       toast.success('Successfully logged in!');
       executeRedirect(); // ✨ USE THE SMART REDIRECT
-
     } catch (err: unknown) {
       if (err instanceof Error) toast.error(err.message);
     } finally {
@@ -102,7 +100,6 @@ function LoginFormContent() {
 
       toast.success('Successfully authenticated!');
       executeRedirect(); // ✨ USE THE SMART REDIRECT
-
     } catch (err: unknown) {
       if (err instanceof Error) toast.error(err.message);
     } finally {
@@ -132,7 +129,6 @@ function LoginFormContent() {
 
       toast.success('Successfully logged in with Google!');
       executeRedirect(); // ✨ USE THE SMART REDIRECT
-
     } catch {
       toast.error('Google login failed. Please try again.');
     }
@@ -335,7 +331,13 @@ function LoginFormContent() {
 // ✨ Export wrapped in Suspense (Required by Next.js to read URL Params)
 export function LoginForm() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+        </div>
+      }
+    >
       <LoginFormContent />
     </Suspense>
   );

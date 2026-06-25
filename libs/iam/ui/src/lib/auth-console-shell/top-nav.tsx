@@ -12,7 +12,10 @@ export function AuthConsoleTopNav() {
         <OrgSwitcher />
 
         {/* Clean vertical divider line */}
-        <div className="hidden sm:block h-6 w-px bg-gray-200" aria-hidden="true" />
+        <div
+          className="hidden sm:block h-6 w-px bg-gray-200"
+          aria-hidden="true"
+        />
 
         {/* Micro Region Indicator */}
         <div className="hidden sm:flex flex-col">

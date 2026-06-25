@@ -21,8 +21,7 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       // ✨ Verify the token signature using the shared secret
-      const payload = await this.jwtService.verifyAsync(token, {
-      });
+      const payload = await this.jwtService.verifyAsync(token, {});
 
       // ✨ Attach the user's data (ID, Email, TenantId) directly to the request!
       request['user'] = payload;

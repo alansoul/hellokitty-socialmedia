@@ -11,7 +11,6 @@ import { OAuth2Client } from 'google-auth-library'; // ✨ Added Google Library
 import * as speakeasy from 'speakeasy';
 import { EventEmitter2 } from '@nestjs/event-emitter'; // ✨ Import Event Bus
 
-
 @Injectable()
 export class IamFeatureAuthService {
   private googleClient: OAuth2Client;
@@ -75,7 +74,12 @@ export class IamFeatureAuthService {
     });
 
     // ✨ EMIT EVENT
-    this.eventEmitter.emit('audit.user.signup', { tenantId: tenant.id, action: 'user.signup', actor: email, details: 'New user registered via Email/Password' });
+    this.eventEmitter.emit('audit.user.signup', {
+      tenantId: tenant.id,
+      action: 'user.signup',
+      actor: email,
+      details: 'New user registered via Email/Password',
+    });
 
     return newUser;
   }
@@ -122,8 +126,6 @@ export class IamFeatureAuthService {
         expiresIn: '5m',
       });
 
-      
-
       return {
         mfa_required: true,
         mfa_token: mfaToken,
@@ -132,7 +134,12 @@ export class IamFeatureAuthService {
     }
 
     // ✨ EMIT EVENT
-    this.eventEmitter.emit('audit.user.login', { tenantId: user.tenantId, action: 'user.login', actor: email, details: 'Successful login via Password' });
+    this.eventEmitter.emit('audit.user.login', {
+      tenantId: user.tenantId,
+      action: 'user.login',
+      actor: email,
+      details: 'Successful login via Password',
+    });
 
     // No MFA enabled? Log them straight in!
     // ✨ Use the shared helper function
@@ -184,9 +191,13 @@ export class IamFeatureAuthService {
 
     if (!isValid) throw new UnauthorizedException('Invalid 6-digit code');
 
-     // ✨ EMIT EVENT
-    this.eventEmitter.emit('audit.user.login.mfa', { tenantId: user.tenantId, action: 'user.login.mfa', actor: user.email, details: 'Successful login via MFA TOTP' });
-
+    // ✨ EMIT EVENT
+    this.eventEmitter.emit('audit.user.login.mfa', {
+      tenantId: user.tenantId,
+      action: 'user.login.mfa',
+      actor: user.email,
+      details: 'Successful login via MFA TOTP',
+    });
 
     // Code is perfect! Issue the real JWTs.
     return this.generateTokens(user.id, user.email, user.tenantId);
@@ -257,10 +268,16 @@ export class IamFeatureAuthService {
       });
     }
 
-    if (!user) throw new UnauthorizedException('Failed to process Google Login');
+    if (!user)
+      throw new UnauthorizedException('Failed to process Google Login');
 
-     // ✨ EMIT EVENT
-    this.eventEmitter.emit('audit.user.login.google', { tenantId: user.tenantId, action: 'user.login.google', actor: user.email, details: 'Successful login via Google OAuth' });
+    // ✨ EMIT EVENT
+    this.eventEmitter.emit('audit.user.login.google', {
+      tenantId: user.tenantId,
+      action: 'user.login.google',
+      actor: user.email,
+      details: 'Successful login via Google OAuth',
+    });
 
     return this.generateTokens(user.id, user.email, user.tenantId);
   }
