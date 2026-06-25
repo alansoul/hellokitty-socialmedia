@@ -4,6 +4,7 @@ import { IamFeatureApplicationsService } from './iam-feature-applications.servic
 import { IamPrismaService } from '@hellokitty/data-access';
 
 @Module({
+  imports: [],
   controllers: [IamFeatureApplicationsController],
   providers: [IamFeatureApplicationsService, IamPrismaService],
   exports: [IamFeatureApplicationsService],

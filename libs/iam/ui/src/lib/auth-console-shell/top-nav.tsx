@@ -1,20 +1,28 @@
 'use client';
 
 import { Search, Bell } from 'lucide-react';
+import { OrgSwitcher } from '../org-switcher/org-switcher'; // ✨ Imported the Switcher
 
 export function AuthConsoleTopNav() {
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-10 sticky top-0">
-      {/* Left side: Context/Tenant */}
+      {/* ✨ Left side: Integrated Org Switcher & Region Context */}
       <div className="flex items-center gap-4">
-        <div className="flex flex-col">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Current Tenant
+        {/* Mount your dropdown switcher */}
+        <OrgSwitcher />
+
+        {/* Clean vertical divider line */}
+        <div className="hidden sm:block h-6 w-px bg-gray-200" aria-hidden="true" />
+
+        {/* Micro Region Indicator */}
+        <div className="hidden sm:flex flex-col">
+          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-none">
+            Region
           </span>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-sm font-medium text-gray-900">
-              us-east-1 (Default)
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+            <span className="text-xs font-semibold text-gray-600">
+              us-east-1
             </span>
           </div>
         </div>

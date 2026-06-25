@@ -17,7 +17,10 @@ const redisUrl = new URL(REDIS_URL_STRING);
     // ✨ ADD THE JWT MODULE HERE
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SECRET || 'super-secret-dev-key-change-in-prod',
+      publicKey: process.env['JWT_PUBLIC_KEY']?.replace(/\\n/g, '\n'),
+      verifyOptions: {
+        algorithms: ['RS256'],
+      },
     }),
 
     // 1. Background Jobs Configuration (BullMQ)

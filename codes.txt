@@ -81,7 +81,7 @@ services:
     routes:
       - name: auth-routes
         paths:
-          - /api/auth     # All login/signup requests go here
+          - /api/auth # All login/signup requests go here
         strip_path: false # Keeps the '/api/auth' prefix when sending to NestJS
 
   # -----------------------------------------------------
@@ -93,7 +93,7 @@ services:
     routes:
       - name: social-routes
         paths:
-          - /api/posts    # The posts controller we just moved!
+          - /api/posts # The posts controller we just moved!
           - /api/profiles # For user social profiles
           - /api/comments # For post comments
         strip_path: false
@@ -102,9 +102,10 @@ services:
 plugins:
   - name: rate-limiting
     config:
-      minute: 100        # Allow 100 requests per minute per user
+      minute: 100 # Allow 100 requests per minute per user
       policy: local
       fault_tolerant: true
+
 
 
 === START OF FILE: pnpm-workspace.yaml ===
@@ -128,7 +129,7 @@ services:
     region: ohio
     plan: free
     # Generate the IAM Postgres Client, then build auth-api
-    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && npx prisma generate --schema=libs/iam/data-access/prisma/schema.prisma && pnpm nx build auth-api
+    buildCommand: 'pnpm install --frozen-lockfile && npx prisma generate --schema=libs/iam/data-access/prisma/schema.prisma && pnpm nx build auth-api'
     startCommand: node dist/apps/auth-api/main.js
     envVars:
       - key: NODE_ENV
@@ -143,7 +144,7 @@ services:
     region: ohio
     plan: free
     # Generate the Social Mongo Client, then build social-api
-    buildCommand: npm install -g pnpm && pnpm install --frozen-lockfile && npx prisma generate --schema=libs/social/data-access/prisma/schema.prisma && pnpm nx build social-api
+    buildCommand: 'pnpm install --frozen-lockfile && npx prisma generate --schema=libs/social/data-access/prisma/schema.prisma && pnpm nx build social-api'
     startCommand: node dist/apps/social-api/main.js
     envVars:
       - key: NODE_ENV
@@ -152,6 +153,7 @@ services:
         sync: false
       - key: REDIS_URL
         sync: false
+
 
 
 === START OF FILE: .github\dependabot.yml ===
@@ -169,31 +171,32 @@ updates:
     labels:
       - 'dependencies'
 
-  # Maintain Docker images (Postgres, Redis, Kong)
-  - package-ecosystem: 'docker'
-    directory: '/'
-    schedule:
-      interval: 'monthly'
-    commit-message:
-      prefix: 'chore(docker)'
+  # # Maintain Docker images (Postgres, Redis, Kong)
+  # - package-ecosystem: 'docker'
+  #   directory: '/'
+  #   schedule:
+  #     interval: 'monthly'
+  #   commit-message:
+  #     prefix: 'chore(docker)'
 
 
 
 === START OF FILE: .github\labeler.yml ===
 
-"domain: auth":
+'domain: auth':
   - any:
-    - 'apps/auth-api/**'
-    - 'libs/iam/**'
+      - 'apps/auth-api/**'
+      - 'libs/iam/**'
 
-"domain: social":
+'domain: social':
   - any:
-    - 'apps/social-api/**'
-    - 'libs/social/**'
+      - 'apps/social-api/**'
+      - 'libs/social/**'
 
-"domain: frontend":
+'domain: frontend':
   - any:
-    - 'apps/web/**'
+      - 'apps/web/**'
+
 
 
 === START OF FILE: .github\actions\setup-workspace\action.yml ===
@@ -228,12 +231,12 @@ runs:
 
 name: 🐛 Bug Report
 description: Report a bug in the HelloKitty platform
-title: "[BUG] "
-labels: ["bug", "triage"]
+title: '[BUG] '
+labels: ['bug', 'triage']
 body:
   - type: markdown
     attributes:
-      value: "Thanks for taking the time to report this! Please fill out the form below."
+      value: 'Thanks for taking the time to report this! Please fill out the form below.'
   - type: dropdown
     id: environment
     attributes:
@@ -259,6 +262,7 @@ body:
       render: shell
 
 
+
 === START OF FILE: .github\workflows\ci.yml ===
 
 # <-- Main Pull Request Pipeline
@@ -276,7 +280,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
-  
 jobs:
   main-ci:
     name: Validate Workspace
@@ -308,7 +311,7 @@ jobs:
         run: pnpm nx affected -t lint --parallel=3
 
       - name: 🧪 Test Affected
-        run: pnpm nx affected -t test --parallel=3 --configuration=ci
+        run: pnpm nx affected -t test --parallel=3 --configuration=ci --passWithNoTests
 
       - name: 🏗️ Build Affected
         run: pnpm nx affected -t build --parallel=3
@@ -317,13 +320,13 @@ jobs:
 
 === START OF FILE: .github\workflows\codeql.yml ===
 
-name: "CodeQL Security Scan"
+name: 'CodeQL Security Scan'
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
   schedule:
     - cron: '0 0 * * 0' # Also runs automatically every Sunday at midnight
 
@@ -347,6 +350,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
 
+
 === START OF FILE: .github\workflows\label-pr.yml ===
 
 name: Auto-Label PRs
@@ -363,70 +367,7 @@ jobs:
     steps:
       - uses: actions/labeler@v5
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-
-
-=== START OF FILE: .github\workflows\release.yml ===
-
-# <-- Automated Release Pipeline (Optional)
-
-name: Automated Release
-
-on:
-  push:
-    branches:
-      - main # Changed from master to main
-
-permissions:
-  contents: write # ⚠️ CRITICAL: Needed for the bot to push tags and create GitHub Releases
-  issues: write
-
-jobs:
-  release:
-    name: Version, Changelog & Release
-    runs-on: ubuntu-latest
-
-    # ENTERPRISE TRICK: Prevent infinite loops.
-    # Do not run this action if the commit was made by the release bot itself.
-    if: "!contains(github.event.head_commit.message, 'chore(release)')"
-
-    steps:
-      - name: 🛒 Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Required to calculate changelog differences
-
-      - name: ⚙️ Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
-      - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: './hellokitty/pnpm-lock.yaml' # Point to the lockfile
-
-      - name: 📦 Install Dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 🔐 Configure Git Bot Identity
-        # This tells Git WHO is making the version bumps
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: 🚀 Run Nx Release
-        # This command will automatically:
-        # 1. Bump versions in package.json files
-        # 2. Generate CHANGELOG.md based on your PR titles
-        # 3. Create a GitHub Release with notes
-        # 4. Commit and push the changes back to master
-        run: pnpm nx release --yes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }} # Uncomment if publishing libraries to NPM registry
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
 
 
 
@@ -455,22 +396,33 @@ jobs:
           close-issue-message: 'This issue was closed because it has been stalled for 7 days with no activity.'
 
 
+
 === START OF FILE: apps\auth-api\src\main.ts ===
 
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
+// apps/auth-api/src/main.ts
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // ✨ Allow both localhost and Vercel to access this API
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3004',
+    'https://hellokitty-socialmedia-oq5v.vercel.app',
+  ];
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+  });
+
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
   const port = process.env.PORT || 3001;
+
   await app.listen(port);
   Logger.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
@@ -501,11 +453,34 @@ export class AppController {
 === START OF FILE: apps\auth-api\src\app\app.module.ts ===
 
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
+import { IamFeatureAuthModule } from '@hellokitty/feature-auth';
+import { IamFeatureApplicationsModule } from '@hellokitty/iam-feature-applications';
+import { IamFeatureUsersModule } from '@hellokitty/iam-feature-users';
+import { IamFeatureOrganizationsModule } from '@hellokitty/iam-feature-organizations';
+import { IamFeatureOauthModule } from '@hellokitty/iam-feature-oauth';
+import { IamFeatureOidcModule } from '@hellokitty/iam-feature-oidc';
+import { IamFeatureMfaModule } from '@hellokitty/iam-feature-mfa';
+import { IamFeatureRbacModule } from '@hellokitty/iam-feature-rbac';
+import { IamFeatureLogsModule } from '@hellokitty/iam-feature-logs';
+
 @Module({
-  imports: [],
+  imports: [
+    EventEmitterModule.forRoot(), // ✨ Activates the global Event Bus
+    IamFeatureAuthModule,
+    IamFeatureApplicationsModule,
+    IamFeatureUsersModule,
+    IamFeatureOrganizationsModule,
+    IamFeatureOauthModule,
+    IamFeatureOidcModule,
+    IamFeatureMfaModule,
+    IamFeatureRbacModule,
+    IamFeatureLogsModule,
+    
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
@@ -526,7 +501,297 @@ export class AppService {
 
 
 
-=== START OF FILE: apps\social-api\src\main.ts ===
+=== START OF FILE: apps\auth-web\index.d.ts ===
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare module '*.svg' {
+  const content: any;
+  export const ReactComponent: any;
+  export default content;
+}
+
+
+
+=== START OF FILE: apps\auth-web\next-env.d.ts ===
+
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+import "./.next/dev/types/routes.d.ts";
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
+
+
+
+=== START OF FILE: apps\auth-web\src\app\layout.tsx ===
+
+import './global.css';
+import { Toaster } from 'sonner';
+
+export const metadata = {
+  title: 'HelloKitty Auth Platform',
+  description: 'Enterprise Identity Provider',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}
+        <Toaster position="top-center" richColors />
+      </body>
+    </html>
+  );
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\page.tsx ===
+
+import { redirect } from 'next/navigation';
+
+export default function AuthWebRootPage() {
+  // Instantly redirect users to the dashboard when they visit the root URL
+  redirect('/dashboard');
+}
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth)\authorize\page.tsx ===
+
+import { AuthorizeView } from '@hellokitty/iam-ui';
+
+export default function AuthorizePage() {
+  return <AuthorizeView />;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth)\consent\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth)\consent</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth)\error\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth)\error</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth)\login\page.tsx ===
+
+import { LoginForm } from '@hellokitty/iam-ui';
+
+export default function LoginPage() {
+  return <LoginForm />;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth)\signup\page.tsx ===
+
+import { SignupForm } from '@hellokitty/iam-ui';
+
+export default function SignupPage() {
+  return <SignupForm />;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth)\verify-email\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth)\verify-email</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\layout.tsx ===
+
+'use client'; // ✨ This layout now runs client-side to check localStorage
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { AuthConsoleSidebar, AuthConsoleTopNav } from '@hellokitty/iam-ui';
+import { Loader2 } from 'lucide-react'; // ✨ Loading spinner
+
+export default function AuthConsoleLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // ✨ Add the checking state
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    // ✨ Instantly check for the token when ANY dashboard page loads
+    const token = localStorage.getItem('access_token');
+
+    if (!token) {
+      router.push('/login'); // Kick them out!
+    } else {
+      setIsCheckingAuth(false); // Let them in!
+    }
+  }, [router]);
+
+  // ✨ Show a spinner while checking to prevent UI flickering
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+      </div>
+    );
+  }
+
+  // ✨ If they have a token, render the beautiful shell
+  return (
+    <div className="flex h-screen bg-white font-sans overflow-hidden">
+      <AuthConsoleSidebar />
+
+      <div className="flex-1 flex flex-col relative overflow-hidden">
+        <AuthConsoleTopNav />
+
+        <main className="flex-1 overflow-y-auto p-8 bg-[#FAFAFA]">
+          <div className="max-w-5xl mx-auto">{children}</div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\actions\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\actions</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\apis\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\apis</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\applications\page.tsx ===
+
+import { ApplicationsView } from '@hellokitty/iam-ui';
+
+export default function ApplicationsPage() {
+  return <ApplicationsView />;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\authentication\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\authentication</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\branding\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\branding</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\dashboard\page.tsx ===
+
+import { DashboardView } from '@hellokitty/iam-ui';
+
+export default function DashboardPage() {
+  return <DashboardView />;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\event-streams\page.tsx ===
+
+import { LogsView } from '@hellokitty/iam-ui';
+
+export default function LogsPage() {
+  return <LogsView />;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\marketplace\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\marketplace</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\monitoring\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\monitoring</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\organizations\page.tsx ===
+
+import { OrganizationsView } from '@hellokitty/iam-ui';
+
+export default function OrganizationsPage() {
+  return <OrganizationsView />;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\roles\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\roles</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\settings\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(auth-console)\settings</div>;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\(auth-console)\users\page.tsx ===
+
+import { UsersView } from '@hellokitty/iam-ui';
+
+export default function UsersPage() {
+  return <UsersView />;
+}
+
+
+
+=== START OF FILE: apps\auth-web\src\app\api\hello\route.ts ===
+
+export async function GET(request: Request) {
+  return new Response('Hello, from API!');
+}
+
+
+
+=== START OF FILE: apps\realtime-api\src\main.ts ===
 
 /**
  * This is not a production server yet!
@@ -541,7 +806,87 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  Logger.log(
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+  );
+}
+
+bootstrap();
+
+
+
+=== START OF FILE: apps\realtime-api\src\app\app.controller.ts ===
+
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getData() {
+    return this.appService.getData();
+  }
+}
+
+
+
+=== START OF FILE: apps\realtime-api\src\app\app.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+
+
+
+=== START OF FILE: apps\realtime-api\src\app\app.service.ts ===
+
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getData(): { message: string } {
+    return { message: 'Hello API' };
+  }
+}
+
+
+
+=== START OF FILE: apps\social-api\src\main.ts ===
+
+// apps/social-api/src/main.ts
+import { Logger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app/app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // ✨ Allow both localhost and Vercel to access this API
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://hellokitty-socialmedia-oq5v.vercel.app',
+  ];
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+  });
+
+  const globalPrefix = 'api';
+  app.setGlobalPrefix(globalPrefix);
   const port = process.env.PORT || 3002;
+
   await app.listen(port);
   Logger.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
@@ -571,38 +916,60 @@ export class AppController {
 
 === START OF FILE: apps\social-api\src\app\app.module.ts ===
 
+// apps/social-api/src/app/app.module.ts
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PostsModule } from './posts/posts.module';
+import { PostsModule } from '@hellokitty/social-feature-posts';
+import { JwtModule } from '@nestjs/jwt';
 
-const redisUrl = new URL(process.env.REDIS_URL || 'redis://localhost:6379');
+// ✨ Safely parse the Render Internal Redis URL, or fallback to your local computer
+const REDIS_URL_STRING = process.env.REDIS_URL || 'redis://localhost:6379';
+const redisUrl = new URL(REDIS_URL_STRING);
 
 @Module({
   imports: [
+    // ✨ ADD THE JWT MODULE HERE
+    JwtModule.register({
+      global: true,
+      secret: process.env.JWT_SECRET || 'super-secret-dev-key-change-in-prod',
+    }),
+
+    // 1. Background Jobs Configuration (BullMQ)
     BullModule.forRoot({
       connection: {
         host: redisUrl.hostname,
         port: Number(redisUrl.port),
         password: redisUrl.password || undefined,
-        tls: redisUrl.protocol === 'rediss:' ? { rejectUnauthorized: false } : undefined,
+        // If the URL starts with rediss://, it enables secure TLS
+        tls:
+          redisUrl.protocol === 'rediss:'
+            ? { rejectUnauthorized: false }
+            : undefined,
       },
     }),
+
+    // 2. Caching Configuration (Cache-Manager)
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: async () => ({
-        store: await redisStore({ url: process.env.REDIS_URL || 'redis://localhost:6379' }),
+        store: await redisStore({
+          url: REDIS_URL_STRING,
+        }),
       }),
     }),
-    PostsModule, // <-- The Posts module you just moved!
+
+    // 3. Your Feature Modules
+    PostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+
 
 
 === START OF FILE: apps\social-api\src\app\app.service.ts ===
@@ -613,46 +980,6 @@ import { Injectable } from '@nestjs/common';
 export class AppService {
   getData(): { message: string } {
     return { message: 'Hello API' };
-  }
-}
-
-
-
-=== START OF FILE: apps\social-api\src\app\cloudinary.service.ts ===
-
-// apps/core-api/src/app/cloudinary.service.ts
-import { Injectable, Logger } from '@nestjs/common';
-import { v2 as cloudinary } from 'cloudinary';
-
-@Injectable()
-export class CloudinaryService {
-  private readonly logger = new Logger(CloudinaryService.name);
-
-  constructor() {
-    // This connects to Cloudinary using your .env variables!
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
-    this.logger.log('Cloudinary successfully initialized ☁️');
-  }
-
-  // A reusable function to upload any image or video!
-  async uploadFile(
-    filePath: string,
-    folder = 'hellokitty_posts',
-  ): Promise<string> {
-    try {
-      const result = await cloudinary.uploader.upload(filePath, {
-        folder: folder,
-        resource_type: 'auto', // Automatically detects if it's an image or video
-      });
-      return result.secure_url;
-    } catch (error) {
-      this.logger.error('Failed to upload file to Cloudinary', error);
-      throw new Error('Media upload failed');
-    }
   }
 }
 
@@ -709,200 +1036,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
 
 
-=== START OF FILE: apps\social-api\src\app\posts\posts.controller.ts ===
-
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseInterceptors,
-  UploadedFile,
-} from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
-import { PostsService } from './posts.service';
-import 'multer'; // Tells TypeScript to load the Multer types
-
-@Controller('posts')
-export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
-
-  @Post()
-  @UseInterceptors(FileInterceptor('file'))
-  create(
-    // ✨ Replaced 'any' with a strict Type!
-    @Body() body: { content?: string; authorId: string },
-    @UploadedFile() file?: Express.Multer.File,
-  ) {
-    return this.postsService.createPost(
-      {
-        content: body.content,
-        authorId: body.authorId,
-      },
-      file,
-    );
-  }
-
-  @Get()
-  @UseInterceptors(CacheInterceptor)
-  @CacheKey('global_feed')
-  @CacheTTL(10000) // 10 seconds
-  findAll() {
-    return this.postsService.findAll();
-  }
-}
-
-
-
-=== START OF FILE: apps\social-api\src\app\posts\posts.module.ts ===
-
-// apps/core-api/src/app/posts/posts.module.ts
-import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
-import { MulterModule } from '@nestjs/platform-express';
-import { PostsService } from './posts.service';
-import { PostsController } from './posts.controller';
-import { CloudinaryService } from '../cloudinary.service';
-import { PrismaService } from '@hellokitty/social/data-access';
-import { PostsWorker } from './posts.worker';
-
-@Module({
-  imports: [
-    // 1. Create a Redis Queue named 'media-upload'
-    BullModule.registerQueue({
-      name: 'media-upload',
-    }),
-    // 2. Tell Multer to save uploaded files to a temp folder
-    MulterModule.register({
-      dest: './tmp/uploads',
-    }),
-  ],
-  controllers: [PostsController],
-  providers: [PostsService, CloudinaryService, PrismaService, PostsWorker],
-})
-export class PostsModule {}
-
-
-
-=== START OF FILE: apps\social-api\src\app\posts\posts.service.ts ===
-
-// apps/core-api/src/app/posts/posts.service.ts
-import { Injectable } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import 'multer';
-
-// 1. Get PrismaService from your custom Nx library
-import { PrismaService } from '@hellokitty/social/data-access';
-// 2. Get the generated types (MediaType) directly from the client
-import { MediaType } from '@prisma/client-social';
-
-@Injectable()
-export class PostsService {
-  constructor(
-    private readonly prisma: PrismaService,
-    // Notice we removed CloudinaryService here! Only the Worker needs it now.
-    @InjectQueue('media-upload') private readonly mediaQueue: Queue,
-  ) {}
-
-  async createPost(
-    data: { content?: string; authorId: string },
-    file?: Express.Multer.File,
-  ) {
-    const isVideo = file?.mimetype.startsWith('video') || false;
-
-    // 1. Save to DB INSTANTLY (Notice mediaUrl is null for now)
-    const post = await this.prisma.post.create({
-      data: {
-        content: data.content,
-        mediaType: file
-          ? isVideo
-            ? MediaType.VIDEO
-            : MediaType.IMAGE
-          : MediaType.TEXT,
-        authorId: data.authorId,
-      },
-    });
-
-    // 2. If there is a file, drop it into the Redis Queue!
-    if (file) {
-      await this.mediaQueue.add('upload-job', {
-        postId: post.id,
-        filePath: file.path,
-        isVideo,
-      });
-    }
-
-    // 3. Return the post immediately to the user! Lightning fast ⚡
-    return post;
-  }
-
-  findAll() {
-    return this.prisma.post.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { author: true },
-    });
-  }
-}
-
-
-
-=== START OF FILE: apps\social-api\src\app\posts\posts.worker.ts ===
-
-// apps/core-api/src/app/posts/posts.worker.ts
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
-import { PrismaService } from '@hellokitty/social/data-access';
-import { CloudinaryService } from '../cloudinary.service';
-import * as fs from 'fs/promises';
-
-@Processor('media-upload') // Listens to the exact queue we registered
-export class PostsWorker extends WorkerHost {
-  private readonly logger = new Logger(PostsWorker.name);
-
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly cloudinary: CloudinaryService,
-  ) {
-    super();
-  }
-
-  // This function runs automatically whenever a new job hits Redis
-  async process(
-    job: Job<{ postId: string; filePath: string; isVideo: boolean }>,
-  ) {
-    this.logger.log(`👷 Processing media for Post ${job.data.postId}...`);
-
-    try {
-      // 1. Upload the temp file to Cloudinary
-      const url = await this.cloudinary.uploadFile(job.data.filePath);
-
-      // 2. Update the database with the final Cloudinary URL
-      await this.prisma.post.update({
-        where: { id: job.data.postId },
-        data: { mediaUrl: url },
-      });
-
-      // 3. Delete the temporary file from our disk to save space
-      await fs.unlink(job.data.filePath);
-
-      this.logger.log(
-        `✅ Successfully processed media for Post ${job.data.postId}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `❌ Failed to process media for Post ${job.data.postId}`,
-        error,
-      );
-      throw error; // BullMQ will automatically retry the job later if it fails!
-    }
-  }
-}
-
-
-
 === START OF FILE: apps\web\index.d.ts ===
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -928,10 +1061,11 @@ import "./.next/dev/types/routes.d.ts";
 === START OF FILE: apps\web\src\app\layout.tsx ===
 
 import './global.css';
+import { Toaster } from 'sonner';
 
 export const metadata = {
-  title: 'Welcome to web',
-  description: 'Generated by create-nx-workspace',
+  title: 'HelloKitty Social',
+  description: 'The ultimate enterprise social platform',
 };
 
 export default function RootLayout({
@@ -941,7 +1075,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* ✨ Mount the Toaster globally */}
+        <Toaster position="top-center" richColors />
+      </body>
     </html>
   );
 }
@@ -950,53 +1088,120 @@ export default function RootLayout({
 
 === START OF FILE: apps\web\src\app\page.tsx ===
 
-// apps/web/src/app/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Post } from '@hellokitty/types'; // ✨ Import the strict type from our shared library!
+import { Post } from '@hellokitty/types';
+import { Loader2 } from 'lucide-react'; // ✨ For a beautiful loading spinner
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL is not defined');
+const SOCIAL_API =
+  process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
+// ✨ Define where the Auth App lives
+const AUTH_APP_URL = process.env.NEXT_PUBLIC_AUTH_APP_URL || 'http://localhost:3004';
 
 export default function Feed() {
-  // ✨ Replace 'any[]' with 'Post[]'
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // ✨ Add this to prevent UI flickering while checking the token!
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    // Check auth instantly when the page loads
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      // ✨ Cross-domain redirect!
+      const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
+      const redirectUri = encodeURIComponent('http://localhost:3000/callback');
+      window.location.href = `${AUTH_APP_URL}/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+    } else {
+      setIsCheckingAuth(false);
+      fetchPosts();
+    }
+  }, []);
+
   const fetchPosts = async () => {
     try {
-      const res = await fetch(`${API_URL}/posts`);
-      if (!res.ok) throw new Error('Failed to fetch posts');
-      const data = await res.json();
+      // ✨ 1. Grab the token from LocalStorage
+      const token = localStorage.getItem('access_token');
+
+      // If no token exists, kick them back to the login page!
+      if (!token) {
+        const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
+        const redirectUri = encodeURIComponent('http://localhost:3000/callback');
+        window.location.href = `${AUTH_APP_URL}/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+        return;
+      }
+
+      // ✨ 2. Pass the token to the Social API
+      const response = await fetch(`${SOCIAL_API}/posts`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // ✨ THE FIX: If the token is expired, delete it and kick them out!
+      if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
+        const redirectUri = encodeURIComponent('http://localhost:3000/callback');
+        window.location.href = `${AUTH_APP_URL}/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch posts');
+      }
+
+      const data = await response.json();
       setPosts(data);
     } catch (error) {
       console.error(error);
     }
   };
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
+      const redirectUri = encodeURIComponent('http://localhost:3000/callback');
+      window.location.href = `${AUTH_APP_URL}/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+      return;
+    }
+
     const formData = new FormData();
     formData.append('content', content);
-    formData.append('authorId', 'test-user-id');
+
+    // ✨ 3. WE DELETED THE FAKE authorId!
+    // The NestJS backend will automatically extract the ID from the JWT!
+
     if (file) {
       formData.append('file', file);
     }
 
     try {
-      const res = await fetch(`${API_URL}/posts`, {
+      const res = await fetch(`${SOCIAL_API}/posts`, {
         method: 'POST',
+        headers: {
+          // ✨ 4. Pass the token here as well
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
       });
+
+      // ✨ Also kick them out here if token expired while typing a post
+      if (res.status === 401) {
+        localStorage.removeItem('access_token');
+        const clientId = process.env.NEXT_PUBLIC_CLIENT_ID;
+        const redirectUri = encodeURIComponent('http://localhost:3000/callback');
+        window.location.href = `${AUTH_APP_URL}/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+        return;
+      }
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -1013,6 +1218,15 @@ export default function Feed() {
       setLoading(false);
     }
   };
+
+  // ✨ Show a loading screen while verifying the token so the page doesn't flash
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4 font-sans text-gray-800">
@@ -1053,7 +1267,7 @@ export default function Feed() {
             className="bg-white p-4 rounded-xl shadow-sm border"
           >
             <div className="flex items-center mb-4">
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold mr-3">
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold mr-3 uppercase">
                 {post.author?.displayName?.[0] || 'U'}
               </div>
               <div>
@@ -1092,6 +1306,14 @@ export default function Feed() {
 
 
 
+=== START OF FILE: apps\web\src\app\(marketing)\page.tsx ===
+
+export default function Page() {
+  return <div>apps\web\src\app\(marketing)</div>;
+}
+
+
+
 === START OF FILE: apps\web\src\app\api\hello\route.ts ===
 
 export async function GET(request: Request) {
@@ -1100,10 +1322,243 @@ export async function GET(request: Request) {
 
 
 
+=== START OF FILE: apps\web\src\app\callback\page.tsx ===
+
+'use client';
+
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
+function CallbackContent() {
+  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const code = searchParams.get('code');
+  const errParam = searchParams.get('error');
+
+  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID || '';
+
+  useEffect(() => {
+    if (errParam) {
+      setError('Access Denied. You did not authorize the application.');
+      return;
+    }
+
+    if (!code) return;
+
+    // ✨ THE MAGIC: Exchange the 60-second code for the real JWT Tokens!
+    const exchangeCode = async () => {
+      try {
+        const res = await fetch(`${AUTH_API}/oauth/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            grant_type: 'authorization_code',
+            client_id: CLIENT_ID,
+            code: code,
+            redirect_uri: 'http://localhost:3000/callback',
+          }),
+        });
+
+        if (!res.ok) throw new Error('Failed to exchange code for tokens');
+
+        const data = await res.json();
+        
+        // Save the tokens in the Social App's Local Storage!
+        localStorage.setItem('access_token', data.access_token);
+        if (data.refresh_token) localStorage.setItem('refresh_token', data.refresh_token);
+
+        // Success! Send them to the feed!
+        router.push('/');
+      } catch (err) {
+        console.error(err);
+        setError('Fatal Error: Could not authenticate with Identity Provider.');
+      }
+    };
+
+    exchangeCode();
+  }, [code, errParam, router, AUTH_API, CLIENT_ID]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-red-600 font-bold p-4 text-center">
+        <p>{error}</p>
+        <button onClick={() => router.push('/')} className="mt-4 text-blue-500 underline">Try Again</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+      <Loader2 className="w-12 h-12 animate-spin text-pink-500 mb-4" />
+      <p className="text-gray-600 font-medium">Authenticating with HelloKitty Auth...</p>
+    </div>
+  );
+}
+
+export default function CallbackPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CallbackContent />
+    </Suspense>
+  );
+}
+
+
+=== START OF FILE: apps\worker\src\main.ts ===
+
+/**
+ * This is not a production server yet!
+ * This is only a minimal backend to get started.
+ */
+
+import { Logger } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app/app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  const globalPrefix = 'api';
+  app.setGlobalPrefix(globalPrefix);
+  const port = process.env.PORT || 3003;
+  await app.listen(port);
+  Logger.log(
+    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+  );
+}
+
+bootstrap();
+
+
+
+=== START OF FILE: apps\worker\src\app\app.controller.ts ===
+
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getData() {
+    return this.appService.getData();
+  }
+}
+
+
+
+=== START OF FILE: apps\worker\src\app\app.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { PostsWorker } from './posts.worker';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+import { PrismaService } from '@hellokitty/social/data-access';
+import { CloudinaryService } from '@hellokitty/shared-storage';
+
+const REDIS_URL_STRING = process.env.REDIS_URL || 'redis://localhost:6379';
+const redisUrl = new URL(REDIS_URL_STRING);
+
+@Module({
+  imports: [
+    BullModule.forRoot({
+      connection: {
+        host: redisUrl.hostname,
+        port: Number(redisUrl.port),
+        password: redisUrl.password || undefined,
+        tls:
+          redisUrl.protocol === 'rediss:'
+            ? { rejectUnauthorized: false }
+            : undefined,
+      },
+    }),
+  ],
+  controllers: [AppController],
+  // ✨ Register the worker here!
+  providers: [AppService, PostsWorker, PrismaService, CloudinaryService],
+})
+export class AppModule {}
+
+
+
+=== START OF FILE: apps\worker\src\app\app.service.ts ===
+
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getData(): { message: string } {
+    return { message: 'Hello API' };
+  }
+}
+
+
+
+=== START OF FILE: apps\worker\src\app\posts.worker.ts ===
+
+// apps/core-api/src/app/posts/posts.worker.ts
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Logger } from '@nestjs/common';
+import { Job } from 'bullmq';
+import { PrismaService } from '@hellokitty/social/data-access';
+import { CloudinaryService } from '@hellokitty/shared-storage';
+import * as fs from 'fs/promises';
+
+@Processor('media-upload') // Listens to the exact queue we registered
+export class PostsWorker extends WorkerHost {
+  private readonly logger = new Logger(PostsWorker.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {
+    super();
+  }
+
+  // This function runs automatically whenever a new job hits Redis
+  async process(
+    job: Job<{ postId: string; filePath: string; isVideo: boolean }>,
+  ) {
+    this.logger.log(`👷 Processing media for Post ${job.data.postId}...`);
+
+    try {
+      // 1. Upload the temp file to Cloudinary
+      const url = await this.cloudinary.uploadFile(job.data.filePath);
+
+      await this.prisma.post.update({
+        where: { id: job.data.postId },
+        data: { mediaUrl: url },
+      });
+
+      // 3. Delete the temporary file from our disk to save space
+      await fs.unlink(job.data.filePath);
+
+      this.logger.log(
+        `✅ Successfully processed media for Post ${job.data.postId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `❌ Failed to process media for Post ${job.data.postId}`,
+        error,
+      );
+      throw error; // BullMQ will automatically retry the job later if it fails!
+    }
+  }
+}
+
+
+
 === START OF FILE: libs\iam\data-access\prisma\schema.prisma ===
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -1111,38 +1566,181 @@ generator client {
   output   = "../../../../node_modules/@prisma/client-iam"
 }
 
+// -----------------------------------------------------------------------------
+// 1. TENANTS & APPLICATIONS (CLIENTS)
+// -----------------------------------------------------------------------------
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  users     User[]
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(255)
+  region        String   @default("us-east-1")
+  customDomain  String?  @map("custom_domain") @db.VarChar(255)
+  
+  applications  Application[]
+  users         User[]
+  organizations Organization[]
+  auditLogs     AuditLog[]
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("tenants")
 }
 
+model Application {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid @map("tenant_id")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name           String
+  type           String   // SPA, NATIVE, REGULAR_WEB, M2M
+  clientId       String   @unique @map("client_id")
+  clientSecret   String?  @map("client_secret")
+  
+  // Security & OAuth
+  authMethod     String   @default("client_secret_post") @map("auth_method")
+  pkceRequired   Boolean  @default(true) @map("pkce_required")
+  allowedOrigins String[] @map("allowed_origins")
+  redirectUris   String[] @map("redirect_uris")
+
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("applications")
+}
+
+// -----------------------------------------------------------------------------
+// 2. USERS, IDENTITIES & CREDENTIALS
+// -----------------------------------------------------------------------------
 model User {
-  id           String    @id @default(uuid())
-  tenantId     String
-  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid @map("tenant_id")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  email          String   @db.VarChar(255)
+  emailVerified  Boolean  @default(false) @map("email_verified")
+  status         String   @default("ACTIVE") // ACTIVE, BLOCKED, PENDING
   
-  email        String    @unique
-  passwordHash String
-  mfaSecret    String?
-  
-  sessions     Session[]
-  createdAt    DateTime  @default(now())
+  identities     Identity[]
+  credentials    Credential[]
+  mfaFactors     MfaFactor[]
+  sessions       Session[]
+  memberships    Membership[]
+
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, email]) // Users are isolated per tenant
+  @@map("users")
 }
 
+model Identity {
+  id               String @id @default(uuid()) @db.Uuid
+  userId           String @db.Uuid @map("user_id")
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  provider         String // google-oauth2, github, auth0 (database)
+  providerUserId   String @map("provider_user_id")
+  
+  @@unique([provider, providerUserId])
+  @@map("identities")
+}
+
+model Credential {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid @map("user_id")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type           String    // PASSWORD, PASSKEY
+  passwordHash   String?   @map("password_hash")
+  rotatedAt      DateTime? @map("rotated_at")
+
+  @@map("credentials")
+}
+
+model MfaFactor {
+  id             String  @id @default(uuid()) @db.Uuid
+  userId         String  @db.Uuid @map("user_id")
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type           String  // TOTP, SMS, RECOVERY_CODE
+  secret         String? 
+  verified       Boolean @default(false)
+
+  @@map("mfa_factors")
+}
+
+// -----------------------------------------------------------------------------
+// 3. B2B ORGANIZATIONS & RBAC
+// -----------------------------------------------------------------------------
+model Organization {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid @map("tenant_id")
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name           String
+  displayName    String?  @map("display_name")
+  
+  memberships    Membership[]
+
+  @@map("organizations")
+}
+
+model Membership {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @db.Uuid @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  organizationId String       @db.Uuid @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  role           String       // ADMIN, MEMBER
+
+  @@unique([userId, organizationId])
+  @@map("memberships")
+}
+
+// -----------------------------------------------------------------------------
+// 4. SESSIONS & TOKENS (OIDC)
+// -----------------------------------------------------------------------------
 model Session {
-  id           String   @id @default(uuid())
-  sessionToken String   @unique
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expires      DateTime
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  sessionToken   String   @unique @map("session_token")
+  ipAddress      String?  @map("ip_address") @db.Inet
+  userAgent      String?  @map("user_agent")
+  
+  expiresAt      DateTime @map("expires_at")
+  revoked        Boolean  @default(false)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// -----------------------------------------------------------------------------
+// 5. AUDIT LOGS (Compliance & Security)
+// -----------------------------------------------------------------------------
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid @map("tenant_id")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  action    String   // e.g., "user.login", "org.created"
+  actor     String?  // The Email or ID of the person who did it
+  details   String?  // Extra info (like the App Name)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("audit_logs")
 }
 
 
 === START OF FILE: libs\iam\data-access\src\index.ts ===
 
 export * from './lib/data-access';
+export * from './lib/iam-prisma.service';
 
 
 
@@ -1154,9 +1752,185 @@ export function dataAccess(): string {
 
 
 
+=== START OF FILE: libs\iam\data-access\src\lib\iam-prisma.service.ts ===
+
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client-iam';
+
+@Injectable()
+export class IamPrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
+  async onModuleInit() {
+    await this.$connect();
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\domain\src\index.ts ===
+
+export * from './lib/iam-domain';
+
+
+
+=== START OF FILE: libs\iam\domain\src\lib\iam-domain.ts ===
+
+export function iamDomain(): string {
+  return 'iam-domain';
+}
+
+
+
+=== START OF FILE: libs\iam\feature-actions\src\index.ts ===
+
+export * from './lib/iam-feature-actions.module';
+
+
+
+=== START OF FILE: libs\iam\feature-actions\src\lib\iam-feature-actions.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeatureActionsModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-applications\src\index.ts ===
+
+export * from './lib/iam-feature-applications.module';
+
+
+
+=== START OF FILE: libs\iam\feature-applications\src\lib\iam-feature-applications.controller.ts ===
+
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import { IamFeatureApplicationsService } from './iam-feature-applications.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user: { sub: string; email: string; tenantId: string };
+}
+
+@Controller('applications')
+@UseGuards(JwtAuthGuard) // 🔒 Protected!
+export class IamFeatureApplicationsController {
+  constructor(private readonly appsService: IamFeatureApplicationsService) {}
+
+  @Post()
+  async createApplication(
+    @Body() body: { name: string; type: 'SPA' | 'WEB' | 'M2M' },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    // ✨ Extract the tenantId securely from the JWT token!
+    const tenantId = req.user.tenantId;
+    const email = req.user.email; // ✨ Grab the user's email
+
+    return this.appsService.createApplication(tenantId, body.name, body.type, email);
+  }
+
+  @Get()
+  async getApplications(@Req() req: AuthenticatedRequest) {
+    const tenantId = req.user.tenantId;
+    return this.appsService.getApplicationsByTenant(tenantId);
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-applications\src\lib\iam-feature-applications.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { IamFeatureApplicationsController } from './iam-feature-applications.controller';
+import { IamFeatureApplicationsService } from './iam-feature-applications.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Module({
+  imports: [],
+  controllers: [IamFeatureApplicationsController],
+  providers: [IamFeatureApplicationsService, IamPrismaService],
+  exports: [IamFeatureApplicationsService],
+})
+export class IamFeatureApplicationsModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-applications\src\lib\iam-feature-applications.service.ts ===
+
+import { Injectable } from '@nestjs/common';
+import { IamPrismaService } from '@hellokitty/data-access';
+import * as crypto from 'crypto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
+@Injectable()
+export class IamFeatureApplicationsService {
+  constructor(
+    private readonly prisma: IamPrismaService,
+  private readonly eventEmitter: EventEmitter2
+) {}
+
+  // ✨ Helper to generate secure random strings like "client_abc123..."
+  private generateSecureId(prefix: string, length = 32): string {
+    return `${prefix}_${crypto.randomBytes(length).toString('hex').slice(0, length)}`;
+  }
+
+  async createApplication( tenantId: string, name: string, type: 'SPA' | 'WEB' | 'M2M', actorEmail: string) {
+    const clientId = this.generateSecureId('hk'); // Example: hk_a7b8c9...
+
+    // SPAs (React/Next) don't get secrets because they can't hide them!
+    // Web (Node) and M2M (Servers) get secure secrets.
+    const clientSecret =
+      type === 'SPA' ? null : this.generateSecureId('sec', 64);
+
+    const app = await this.prisma.application.create({
+      data: {
+        tenantId,
+        name,
+        type,
+        clientId,
+        clientSecret,
+        authMethod: type === 'SPA' ? 'none' : 'client_secret_post',
+        pkceRequired: type === 'SPA' ? true : false,
+      },
+    });
+
+    // ✨ SHOUT INTO THE EVENT BUS! 
+    // Notice we don't 'await' this. It happens in the background instantly!
+    this.eventEmitter.emit('audit.app.created', {
+      tenantId: tenantId,
+      action: 'admin.app.created',
+      actor: actorEmail,
+      details: `Created ${type} application: ${name}`
+    });
+
+    return app;
+  }
+
+  async getApplicationsByTenant(tenantId: string) {
+    return this.prisma.application.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+}
+
+
+
 === START OF FILE: libs\iam\feature-auth\src\index.ts ===
 
 export * from './lib/feature-auth';
+export * from './lib/iam-feature-auth.module';
 
 
 
@@ -1168,9 +1942,520 @@ export function featureAuth(): string {
 
 
 
+=== START OF FILE: libs\iam\feature-auth\src\lib\iam-feature-auth.controller.ts ===
+
+import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { IamFeatureAuthService } from './iam-feature-auth.service';
+
+// ✨ Renamed to AuthDto since both signup and login need an email & password
+class AuthDto {
+  email!: string;
+  password!: string;
+}
+
+@Controller('auth')
+export class IamFeatureAuthController {
+  constructor(private readonly authService: IamFeatureAuthService) {}
+
+  @Post('signup')
+  async signup(@Body() body: AuthDto) {
+    return this.authService.signup(body.email, body.password);
+  }
+
+  @Post('login')
+  async login(@Body() body: AuthDto) {
+    return this.authService.login(body.email, body.password);
+  }
+  // ✨ NEW: Google Social Login Endpoint!
+  @Post('google')
+  async googleLogin(@Body() body: { token: string }) {
+    return this.authService.loginWithGoogle(body.token);
+  }
+  @Post('login/mfa')
+  async loginWithMfa(@Body() body: { mfa_token: string; code: string }) {
+    if (!body.mfa_token || !body.code) {
+      throw new UnauthorizedException('mfa_token and code are required');
+    }
+    return this.authService.verifyMfaLogin(body.mfa_token, body.code);
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-auth\src\lib\iam-feature-auth.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { IamFeatureAuthController } from './iam-feature-auth.controller';
+import { IamFeatureAuthService } from './iam-feature-auth.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+ 
+
+@Module({
+  imports: [
+    // ✨ Register the JWT Module with a secret key
+    JwtModule.register({
+      global: true,
+      secret:
+        process.env['JWT_SECRET'] || 'super-secret-dev-key-change-in-prod',
+      signOptions: { expiresIn: '1d' }, // Tokens expire in 1 Day
+    }),
+  ],
+  controllers: [IamFeatureAuthController],
+  providers: [IamFeatureAuthService, IamPrismaService],
+  exports: [IamFeatureAuthService],
+})
+export class IamFeatureAuthModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-auth\src\lib\iam-feature-auth.service.ts ===
+
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { IamPrismaService } from '@hellokitty/data-access';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library'; // ✨ Added Google Library
+import * as speakeasy from 'speakeasy';
+import { EventEmitter2 } from '@nestjs/event-emitter'; // ✨ Import Event Bus
+
+
+@Injectable()
+export class IamFeatureAuthService {
+  private googleClient: OAuth2Client;
+
+  constructor(
+    private readonly prisma: IamPrismaService,
+    private readonly jwtService: JwtService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {
+    // Initialize the Google Client with your future Client ID
+    this.googleClient = new OAuth2Client(process.env['GOOGLE_CLIENT_ID']);
+  }
+
+  // -------------------------------------------------------------
+  // SIGNUP METHOD
+  // -------------------------------------------------------------
+
+  async signup(email: string, passwordPlain: string) {
+    // 1. Ensure the user doesn't already exist
+    const existingUser = await this.prisma.user.findFirst({ where: { email } });
+
+    if (existingUser) {
+      throw new ConflictException('A user with this email already exists.');
+    }
+
+    // 2. Hash the password securely
+    const passwordHash = await bcrypt.hash(passwordPlain, 10);
+
+    // 3. True MVP: Auto-create a default Tenant & Application if they don't exist
+    const tenant = await this.prisma.tenant.upsert({
+      where: { id: '00000000-0000-0000-0000-000000000001' }, // Dummy UUID for MVP
+      update: {},
+      create: {
+        id: '00000000-0000-0000-0000-000000000001',
+        name: 'Default Tenant',
+        region: 'us-east-1',
+      },
+    });
+
+    // 4. Create the actual User in the database
+    const newUser = await this.prisma.user.create({
+      data: {
+        email,
+        tenantId: tenant.id,
+        status: 'ACTIVE',
+        credentials: {
+          create: {
+            type: 'PASSWORD',
+            passwordHash: passwordHash,
+          },
+        },
+      },
+      // Return the user ID and email, but DO NOT return the password hash
+      select: {
+        id: true,
+        email: true,
+        tenantId: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    // ✨ EMIT EVENT
+    this.eventEmitter.emit('audit.user.signup', { tenantId: tenant.id, action: 'user.signup', actor: email, details: 'New user registered via Email/Password' });
+
+    return newUser;
+  }
+
+  // -------------------------------------------------------------
+  // LOGIN METHOD (✨ UPGRADED FOR MFA)
+  // -------------------------------------------------------------
+  async login(email: string, passwordPlain: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { email },
+      include: {
+        credentials: true,
+        mfaFactors: { where: { verified: true } }, // ✅ Moved INSIDE the include block!
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const passwordCred = user.credentials.find((c) => c.type === 'PASSWORD');
+    if (!passwordCred || !passwordCred.passwordHash) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // ✨ FIX: Make sure the user actually sent a password before comparing!
+    if (!passwordPlain) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      passwordPlain,
+      passwordCred.passwordHash,
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // ✨ MFA CHECK: Does the user have a verified TOTP setup?
+    if (user.mfaFactors && user.mfaFactors.length > 0) {
+      // DO NOT issue an access token. Issue a 5-minute temporary MFA token!
+      const mfaPayload = { sub: user.id, mfa_required: true };
+      const mfaToken = await this.jwtService.signAsync(mfaPayload, {
+        expiresIn: '5m',
+      });
+
+      
+
+      return {
+        mfa_required: true,
+        mfa_token: mfaToken,
+        message: 'Please provide your 6-digit authenticator code.',
+      };
+    }
+
+    // ✨ EMIT EVENT
+    this.eventEmitter.emit('audit.user.login', { tenantId: user.tenantId, action: 'user.login', actor: email, details: 'Successful login via Password' });
+
+    // No MFA enabled? Log them straight in!
+    // ✨ Use the shared helper function
+    return this.generateTokens(user.id, user.email, user.tenantId);
+  }
+
+  // -------------------------------------------------------------
+  // VERIFY MFA LOGIN METHOD (✨ NEW!)
+  // -------------------------------------------------------------
+  async verifyMfaLogin(mfaToken: string, code: string) {
+    let payload;
+    try {
+      // Verify the temporary 5-minute token
+      payload = await this.jwtService.verifyAsync(mfaToken);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired MFA token');
+    }
+
+    // Ensure it's actually an MFA token, not a standard access token
+    if (!payload.mfa_required) {
+      throw new UnauthorizedException('Invalid token type');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { mfaFactors: { where: { verified: true } } },
+    });
+
+    if (!user || !user.mfaFactors || user.mfaFactors.length === 0) {
+      throw new UnauthorizedException('MFA is not enabled for this user');
+    }
+
+    const factor = user.mfaFactors[0];
+
+    // ✨ FIX: Safely check if secret exists to satisfy ESLint
+    if (!factor.secret) {
+      throw new UnauthorizedException(
+        'MFA configuration is broken or missing secret',
+      );
+    }
+
+    // ✨ Mathematically verify the 6-digit code
+    const isValid = speakeasy.totp.verify({
+      secret: factor.secret, // No more '!' needed here!
+      encoding: 'base32',
+      token: code,
+      window: 1,
+    });
+
+    if (!isValid) throw new UnauthorizedException('Invalid 6-digit code');
+
+     // ✨ EMIT EVENT
+    this.eventEmitter.emit('audit.user.login.mfa', { tenantId: user.tenantId, action: 'user.login.mfa', actor: user.email, details: 'Successful login via MFA TOTP' });
+
+
+    // Code is perfect! Issue the real JWTs.
+    return this.generateTokens(user.id, user.email, user.tenantId);
+  }
+
+  // -------------------------------------------------------------
+  // GOOGLE LOGIN METHOD
+  // -------------------------------------------------------------
+  async loginWithGoogle(idToken: string) {
+    let payload;
+    try {
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: process.env['GOOGLE_CLIENT_ID'],
+      });
+      payload = ticket.getPayload();
+    } catch {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+
+    if (!payload || !payload.email)
+      throw new UnauthorizedException('Google token missing email');
+
+    const googleId = payload.sub;
+    const email = payload.email;
+
+    const identity = await this.prisma.identity.findUnique({
+      where: {
+        provider_providerUserId: {
+          provider: 'google',
+          providerUserId: googleId,
+        },
+      },
+    });
+
+    let user;
+
+    if (identity) {
+      user = await this.prisma.user.findUnique({
+        where: { id: identity.userId },
+      });
+    } else {
+      user = await this.prisma.user.findFirst({ where: { email } });
+
+      if (!user) {
+        const tenant = await this.prisma.tenant.upsert({
+          where: { id: '00000000-0000-0000-0000-000000000001' },
+          update: {},
+          create: {
+            id: '00000000-0000-0000-0000-000000000001',
+            name: 'Default Tenant',
+            region: 'us-east-1',
+          },
+        });
+
+        user = await this.prisma.user.create({
+          data: {
+            email,
+            tenantId: tenant.id,
+            status: 'ACTIVE',
+            emailVerified: true,
+          },
+        });
+      }
+
+      await this.prisma.identity.create({
+        data: { provider: 'google', providerUserId: googleId, userId: user.id },
+      });
+    }
+
+    if (!user) throw new UnauthorizedException('Failed to process Google Login');
+
+     // ✨ EMIT EVENT
+    this.eventEmitter.emit('audit.user.login.google', { tenantId: user.tenantId, action: 'user.login.google', actor: user.email, details: 'Successful login via Google OAuth' });
+
+    return this.generateTokens(user.id, user.email, user.tenantId);
+  }
+
+  // -------------------------------------------------------------
+  // TOKEN GENERATION HELPER
+  // -------------------------------------------------------------
+
+  // ✨ HELPER: We extracted token generation so both login methods can use it!
+  private async generateTokens(
+    userId: string,
+    email: string,
+    tenantId: string,
+  ) {
+    // ✨ Fetch all organizations this user belongs to!
+    const memberships = await this.prisma.membership.findMany({
+      where: { userId },
+      select: { organizationId: true, role: true },
+    });
+
+    // ✨ Format them into a clean dictionary: { "org123": "ADMIN" }
+    const orgRoles = memberships.reduce(
+      (acc, m) => {
+        acc[m.organizationId] = m.role;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+    // ✨ Embed the roles directly into the JWT payload!
+    const payload = {
+      sub: userId,
+      email,
+      tenantId,
+      org_roles: orgRoles, // <--- The magic happens here!
+    };
+
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    // ✨ 1. GENERATE A REFRESH TOKEN (Expires in 7 days)
+    const refreshToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    // ✨ 2. SAVE THE SESSION TO POSTGRES
+    await this.prisma.session.create({
+      data: {
+        userId: userId,
+        sessionToken: refreshToken,
+        expiresAt: expiresAt,
+      },
+    });
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken, // ✨ 3. RETURN IT TO THE USER
+      token_type: 'Bearer',
+      expires_in: 86400,
+    };
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-billing\src\index.ts ===
+
+export * from './lib/iam-feature-billing.module';
+
+
+
+=== START OF FILE: libs\iam\feature-billing\src\lib\iam-feature-billing.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeatureBillingModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-logs\src\index.ts ===
+
+export * from './lib/iam-feature-logs.module';
+export * from './lib/iam-feature-logs.service';
+
+
+=== START OF FILE: libs\iam\feature-logs\src\lib\iam-feature-logs.controller.ts ===
+
+import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { IamFeatureLogsService } from './iam-feature-logs.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express';
+
+interface AuthRequest extends Request {
+  user: { sub: string; email: string; tenantId: string };
+}
+
+@Controller('logs')
+@UseGuards(JwtAuthGuard) // 🔒 Protect the logs!
+export class IamFeatureLogsController {
+  constructor(private readonly logsService: IamFeatureLogsService) {}
+
+  @Get()
+  async getLogs(@Req() req: AuthRequest) {
+    return this.logsService.getTenantLogs(req.user.tenantId);
+  }
+
+  // ✨ A test endpoint so we can manually trigger logs from the UI
+  @Post('test-event')
+  async createTestEvent(
+    @Req() req: AuthRequest,
+    @Body() body: { action: string; details: string },
+  ) {
+    return this.logsService.logEvent(
+      req.user.tenantId,
+      body.action,
+      req.user.email,
+      body.details,
+    );
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-logs\src\lib\iam-feature-logs.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { IamFeatureLogsController } from './iam-feature-logs.controller';
+import { IamFeatureLogsService } from './iam-feature-logs.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Module({
+  controllers: [IamFeatureLogsController],
+  providers: [IamFeatureLogsService, IamPrismaService],
+  exports: [IamFeatureLogsService],
+})
+export class IamFeatureLogsModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-logs\src\lib\iam-feature-logs.service.ts ===
+
+import { Injectable } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter'; // ✨ Import this
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Injectable()
+export class IamFeatureLogsService {
+  constructor(private readonly prisma: IamPrismaService) {}
+
+  // ✨ This method now automatically triggers whenever ANY file emits an 'audit.*' event!
+  // ✨ 1. The Event Bus Listener (Automatically catches events from other modules)
+  @OnEvent('audit.*')
+  async handleAuditLog(event: { tenantId: string; action: string; actor: string; details: string }) {
+    await this.logEvent(event.tenantId, event.action, event.actor, event.details);
+  }
+
+  // ✨ 2. The Direct Writer (Used by the controller for manual test events)
+  async logEvent(tenantId: string, action: string, actor: string, details?: string) {
+    return this.prisma.auditLog.create({
+      data: { tenantId, action, actor, details },
+    });
+  }
+
+  // ✨ 3. The Fetcher (Used by the React Dashboard to display the table)
+  async getTenantLogs(tenantId: string) {
+    return this.prisma.auditLog.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+      take: 50, // Only fetch the 50 most recent events
+    });
+  }
+}
+
+
 === START OF FILE: libs\iam\feature-mfa\src\index.ts ===
 
 export * from './lib/feature-mfa';
+export * from './lib/iam-feature-mfa.module';
 
 
 
@@ -1178,6 +2463,3034 @@ export * from './lib/feature-mfa';
 
 export function featureMfa(): string {
   return 'feature-mfa';
+}
+
+
+
+=== START OF FILE: libs\iam\feature-mfa\src\lib\iam-feature-mfa.controller.ts ===
+
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { IamFeatureMfaService } from './iam-feature-mfa.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user: { sub: string; email: string };
+}
+
+@Controller('mfa')
+@UseGuards(JwtAuthGuard) // 🔒 Must be logged in to set up MFA!
+export class IamFeatureMfaController {
+  constructor(private readonly mfaService: IamFeatureMfaService) {}
+
+  @Post('setup')
+  async setupMfa(@Req() req: AuthenticatedRequest) {
+    // We pass the email so it shows up nicely in the Google Authenticator App
+    return this.mfaService.generateSecret(req.user.sub, req.user.email);
+  }
+
+  @Post('verify')
+  async verifyMfa(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { code: string },
+  ) {
+    return this.mfaService.verifyAndEnable(req.user.sub, body.code);
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-mfa\src\lib\iam-feature-mfa.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { IamFeatureMfaController } from './iam-feature-mfa.controller';
+import { IamFeatureMfaService } from './iam-feature-mfa.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Module({
+  controllers: [IamFeatureMfaController],
+  providers: [IamFeatureMfaService, IamPrismaService],
+  exports: [IamFeatureMfaService],
+})
+export class IamFeatureMfaModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-mfa\src\lib\iam-feature-mfa.service.ts ===
+
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { IamPrismaService } from '@hellokitty/data-access';
+import * as qrcode from 'qrcode';
+// ✨ Industry standard, flawlessly typed library!
+import * as speakeasy from 'speakeasy';
+
+@Injectable()
+export class IamFeatureMfaService {
+  constructor(private readonly prisma: IamPrismaService) {}
+
+  // 1. SETUP: Generate the Secret and QR Code
+  async generateSecret(userId: string, email: string) {
+    // ✨ Speakeasy generates the secret and the URL automatically!
+    const secret = speakeasy.generateSecret({
+      name: `HelloKitty Auth (${email})`,
+      issuer: 'HelloKitty',
+    });
+
+    // Turn the URI into a Base64 Image string so React can display it instantly!
+    const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url as string);
+
+    // Delete any previous UNVERIFIED setup attempts for this user
+    await this.prisma.mfaFactor.deleteMany({
+      where: { userId, type: 'TOTP', verified: false },
+    });
+
+    // Save the new base32 secret to the database (unverified for now)
+    await this.prisma.mfaFactor.create({
+      data: {
+        userId,
+        type: 'TOTP',
+        secret: secret.base32,
+        verified: false,
+      },
+    });
+
+    // Return the image and the text-based secret
+    return { secret: secret.base32, qrCodeDataUrl };
+  }
+
+  // 2. VERIFY: Check the 6-digit code and lock it in!
+  async verifyAndEnable(userId: string, code: string) {
+    // Find the pending setup
+    const factor = await this.prisma.mfaFactor.findFirst({
+      where: { userId, type: 'TOTP', verified: false },
+    });
+
+    if (!factor || !factor.secret) {
+      throw new BadRequestException(
+        'No MFA enrollment process found. Please start setup first.',
+      );
+    }
+
+    // ✨ Mathematically verify the 6-digit code! (window: 1 allows 30 seconds of clock drift)
+    const isValid = speakeasy.totp.verify({
+      secret: factor.secret,
+      encoding: 'base32',
+      token: code,
+      window: 1,
+    });
+
+    if (!isValid) {
+      throw new BadRequestException('Invalid 6-digit code. Please try again.');
+    }
+
+    // Success! Lock it in as VERIFIED in the database.
+    await this.prisma.mfaFactor.update({
+      where: { id: factor.id },
+      data: { verified: true },
+    });
+
+    return { success: true, message: 'MFA successfully enabled!' };
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-oauth\src\index.ts ===
+
+export * from './lib/iam-feature-oauth.module';
+export * from './lib/iam-feature-oauth.module';
+
+
+
+=== START OF FILE: libs\iam\feature-oauth\src\lib\iam-feature-oauth.controller.ts ===
+
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { IamFeatureOauthService } from './iam-feature-oauth.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express';
+
+interface AuthRequest extends Request {
+  user: { sub: string };
+}
+
+@Controller('oauth')
+export class IamFeatureOauthController {
+  constructor(private readonly oauthService: IamFeatureOauthService) {}
+
+  // ✨ This is called by YOUR Next.js app to get the code to send to the 3rd-party
+  @Post('authorize')
+  @UseGuards(JwtAuthGuard) // Must be logged in to HelloKitty!
+  async authorize(
+    @Body() body: { client_id: string; redirect_uri: string },
+    @Req() req: AuthRequest,
+  ) {
+    const code = await this.oauthService.generateAuthorizationCode(
+      req.user.sub,
+      body.client_id,
+      body.redirect_uri,
+    );
+    return { code };
+  }
+
+  // ✨ This is called by the 3rd-PARTY app's backend to get the real token
+  // ✨ This handles BOTH authorization codes AND refresh tokens
+  @Post('token')
+  async token(
+    @Body()
+    body: {
+      grant_type: string;
+      client_id?: string;
+      client_secret?: string;
+      code?: string;
+      refresh_token?: string; // ✨ Added refresh_token
+      redirect_uri?: string;
+    },
+  ) {
+    // Flow 1: Exchanging a code for the first time
+    if (body.grant_type === 'authorization_code') {
+      if (!body.client_id || !body.code || !body.redirect_uri) {
+        throw new UnauthorizedException(
+          'Missing required parameters for authorization_code',
+        );
+      }
+      return this.oauthService.exchangeToken(
+        body.client_id,
+        body.client_secret || null,
+        body.code,
+        body.redirect_uri,
+      );
+    }
+
+    // ✨ Flow 2: Exchanging a refresh token for a new access token
+    if (body.grant_type === 'refresh_token') {
+      if (!body.refresh_token) {
+        throw new UnauthorizedException('Missing refresh_token');
+      }
+      return this.oauthService.refreshAccessToken(body.refresh_token);
+    }
+
+    // If they ask for a grant_type we don't support yet (like client_credentials)
+    throw new UnauthorizedException('Unsupported grant_type');
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-oauth\src\lib\iam-feature-oauth.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { CacheModule } from '@nestjs/cache-manager';
+import { IamFeatureOauthController } from './iam-feature-oauth.controller';
+import { IamFeatureOauthService } from './iam-feature-oauth.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Module({
+  imports: [
+    CacheModule.register(), // In-memory cache for the 60-second codes
+    JwtModule.register({
+      secret:
+        process.env['JWT_SECRET'] || 'super-secret-dev-key-change-in-prod',
+    }),
+  ],
+  controllers: [IamFeatureOauthController],
+  providers: [IamFeatureOauthService, IamPrismaService],
+  exports: [IamFeatureOauthService],
+})
+export class IamFeatureOauthModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-oauth\src\lib\iam-feature-oauth.service.ts ===
+
+import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import { IamPrismaService } from '@hellokitty/data-access';
+import { JwtService } from '@nestjs/jwt';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import * as crypto from 'crypto';
+
+@Injectable()
+export class IamFeatureOauthService {
+  constructor(
+    private prisma: IamPrismaService,
+    private jwtService: JwtService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
+
+  // 1. GENERATE THE 60-SECOND CODE
+  async generateAuthorizationCode(
+    userId: string,
+    clientId: string,
+    redirectUri: string,
+  ) {
+    const app = await this.prisma.application.findUnique({
+      where: { clientId },
+    });
+    if (!app) throw new UnauthorizedException('Invalid client_id');
+
+    // Generate a secure, random 32-character code
+    const code = crypto.randomBytes(16).toString('hex');
+
+    // Save to Cache (Expires in 60 seconds / 60000ms)
+    await this.cacheManager.set(
+      `auth_code:${code}`,
+      { userId, clientId, redirectUri },
+      60000,
+    );
+
+    return code;
+  }
+
+  // 2. EXCHANGE THE CODE FOR A TOKEN
+  async exchangeToken(
+    clientId: string,
+    clientSecret: string | null,
+    code: string,
+    redirectUri: string,
+  ) {
+    const app = await this.prisma.application.findUnique({
+      where: { clientId },
+    });
+    if (!app) throw new UnauthorizedException('Invalid client');
+
+    // If it's a backend server (WEB/M2M), it must provide the exact secret
+    if (app.type !== 'SPA' && app.clientSecret !== clientSecret) {
+      throw new UnauthorizedException('Invalid client_secret');
+    }
+
+    // Grab the code from the cache
+    const cachedData = await this.cacheManager.get<{
+      userId: string;
+      clientId: string;
+      redirectUri: string;
+    }>(`auth_code:${code}`);
+    if (!cachedData)
+      throw new UnauthorizedException('Invalid or expired authorization code');
+
+    // SECURITY: Delete the code immediately so it can never be used again!
+    await this.cacheManager.del(`auth_code:${code}`);
+
+    // SECURITY: Ensure the app exchanging the code is the same app that requested it
+    if (
+      cachedData.clientId !== clientId ||
+      cachedData.redirectUri !== redirectUri
+    ) {
+      throw new UnauthorizedException(
+        'Code mismatch or hijack attempt detected',
+      );
+    }
+
+    // Issue the standard JWT Token!
+    const user = await this.prisma.user.findUnique({
+      where: { id: cachedData.userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const payload = {
+      sub: user?.id,
+      email: user?.email,
+      tenantId: user?.tenantId,
+    };
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    // ✨ Generate a fresh Refresh Token for the initial exchange!
+    const refreshToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await this.prisma.session.create({
+      data: { userId: user.id, sessionToken: refreshToken, expiresAt },
+    });
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken, // Send the new refresh token back!
+      token_type: 'Bearer',
+      expires_in: 86400,
+    };
+  }
+  // ✨ Added the missing Refresh Token Method!
+  async refreshAccessToken(refreshToken: string) {
+    const session = await this.prisma.session.findUnique({
+      where: { sessionToken: refreshToken },
+      include: { user: true },
+    });
+
+    if (!session || session.revoked || session.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
+
+    // Rotate the token
+    const newRefreshToken = crypto.randomBytes(32).toString('hex');
+    const newExpiresAt = new Date();
+    newExpiresAt.setDate(newExpiresAt.getDate() + 7);
+
+    await this.prisma.session.update({
+      where: { id: session.id },
+      data: { sessionToken: newRefreshToken, expiresAt: newExpiresAt },
+    });
+
+    const payload = {
+      sub: session.user.id,
+      email: session.user.email,
+      tenantId: session.user.tenantId,
+    };
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    return {
+      access_token: accessToken,
+      refresh_token: newRefreshToken,
+      token_type: 'Bearer',
+      expires_in: 86400,
+    };
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-oidc\src\index.ts ===
+
+export * from './lib/iam-feature-oidc.module';
+export * from './lib/iam-feature-oidc.module';
+
+
+
+=== START OF FILE: libs\iam\feature-oidc\src\lib\iam-feature-oidc.controller.ts ===
+
+import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { IamFeatureOidcService } from './iam-feature-oidc.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express';
+
+interface AuthRequest extends Request {
+  user: { sub: string };
+}
+
+@Controller()
+export class IamFeatureOidcController {
+  constructor(private readonly oidcService: IamFeatureOidcService) {}
+
+  // ✨ Public Discovery Endpoint (Standard OIDC Protocol)
+  @Get('.well-known/openid-configuration')
+  getDiscovery() {
+    const baseUrl =
+      process.env['NEXT_PUBLIC_AUTH_API_URL'] || 'http://localhost:3001/api';
+    return this.oidcService.getDiscoveryConfig(baseUrl);
+  }
+
+  // ✨ Public JWKS Endpoint (JSON Web Key Set - Empty for now since we use HS256)
+  @Get('.well-known/jwks.json')
+  getJwks() {
+    return { keys: [] };
+  }
+
+  // ✨ Protected UserInfo Endpoint
+  @Get('oidc/userinfo')
+  @UseGuards(JwtAuthGuard) // 🔒 Requires the Access Token!
+  async getUserInfo(@Req() req: AuthRequest) {
+    return this.oidcService.getUserInfo(req.user.sub);
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-oidc\src\lib\iam-feature-oidc.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { IamFeatureOidcController } from './iam-feature-oidc.controller';
+import { IamFeatureOidcService } from './iam-feature-oidc.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Module({
+  controllers: [IamFeatureOidcController],
+  providers: [IamFeatureOidcService, IamPrismaService],
+  exports: [IamFeatureOidcService],
+})
+export class IamFeatureOidcModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-oidc\src\lib\iam-feature-oidc.service.ts ===
+
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Injectable()
+export class IamFeatureOidcService {
+  constructor(private readonly prisma: IamPrismaService) {}
+
+  // 1. OIDC Discovery Document
+  getDiscoveryConfig(baseUrl: string) {
+    return {
+      issuer: baseUrl,
+      authorization_endpoint: `${baseUrl}/oauth/authorize`,
+      token_endpoint: `${baseUrl}/oauth/token`,
+      userinfo_endpoint: `${baseUrl}/oidc/userinfo`,
+      jwks_uri: `${baseUrl}/.well-known/jwks.json`,
+      response_types_supported: ['code'],
+      subject_types_supported: ['public'],
+      id_token_signing_alg_values_supported: ['HS256', 'RS256'],
+      grant_types_supported: ['authorization_code', 'refresh_token'],
+      scopes_supported: ['openid', 'profile', 'email'],
+    };
+  }
+
+  // 2. Standard OIDC UserInfo Profile
+  async getUserInfo(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    // Return standard OpenID Connect claims
+    return {
+      sub: user.id,
+      email: user.email,
+      email_verified: user.emailVerified,
+      updated_at: Math.floor(new Date(user.updatedAt).getTime() / 1000), // Standard UNIX timestamp
+    };
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-organizations\src\index.ts ===
+
+export * from './lib/iam-feature-organizations.module';
+export * from './lib/iam-feature-organizations.module';
+
+
+
+=== START OF FILE: libs\iam\feature-organizations\src\lib\iam-feature-organizations.controller.ts ===
+
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import { IamFeatureOrganizationsService } from './iam-feature-organizations.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user: { sub: string; email: string; tenantId: string };
+}
+
+@Controller('organizations')
+@UseGuards(JwtAuthGuard) // 🔒 Protect this!
+export class IamFeatureOrganizationsController {
+  constructor(private readonly orgsService: IamFeatureOrganizationsService) {}
+
+  @Post()
+  async createOrg(
+    @Body() body: { name: string },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.sub; // The user creating it
+    return this.orgsService.createOrganization(tenantId, userId, body.name);
+  }
+
+  @Get()
+  async getMyOrgs(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.sub;
+    return this.orgsService.getUserOrganizations(userId);
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-organizations\src\lib\iam-feature-organizations.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { IamFeatureOrganizationsController } from './iam-feature-organizations.controller';
+import { IamFeatureOrganizationsService } from './iam-feature-organizations.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+
+@Module({
+  imports: [],
+  controllers: [IamFeatureOrganizationsController],
+  providers: [IamFeatureOrganizationsService, IamPrismaService],
+  exports: [IamFeatureOrganizationsService],
+})
+export class IamFeatureOrganizationsModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-organizations\src\lib\iam-feature-organizations.service.ts ===
+
+import { Injectable } from '@nestjs/common';
+import { IamPrismaService } from '@hellokitty/data-access';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
+@Injectable()
+export class IamFeatureOrganizationsService {
+  constructor(
+    private readonly prisma: IamPrismaService,
+    private readonly eventEmitter: EventEmitter2
+  ) {}
+
+  async createOrganization(tenantId: string, userId: string, name: string) {
+    // ✨ Use a Prisma Transaction!
+    // This ensures that if the Membership fails, the Organization is rolled back.
+    const result = await this.prisma.$transaction(async (tx) => {
+      // 1. Create the Org
+      const org = await tx.organization.create({
+        data: {
+          tenantId,
+          name,
+          displayName: name,
+        },
+      });
+
+      // 2. Make the creator the Admin
+      await tx.membership.create({
+        data: {
+          userId,
+          organizationId: org.id,
+          role: 'ADMIN',
+        },
+      });
+
+      return org;
+    });
+
+     // ✨ EMIT EVENT
+    this.eventEmitter.emit('audit.org.created', { 
+      tenantId, 
+      action: 'admin.org.created', 
+      actor: userId, 
+      details: `Created organization: ${name}` 
+    });
+
+    return result;
+  }
+
+  async getUserOrganizations(userId: string) {
+    // Find all memberships for this user, and include the Org details
+    const memberships = await this.prisma.membership.findMany({
+      where: { userId },
+      include: {
+        organization: true,
+      },
+      orderBy: { organization: { name: 'asc' } },
+    });
+
+    // Map it so it returns a clean array of organizations with the user's role attached
+    return memberships.map((m) => ({
+      id: m.organization.id,
+      name: m.organization.name,
+      displayName: m.organization.displayName,
+      myRole: m.role,
+    }));
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-passkeys\src\index.ts ===
+
+export * from './lib/iam-feature-passkeys.module';
+
+
+
+=== START OF FILE: libs\iam\feature-passkeys\src\lib\iam-feature-passkeys.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeaturePasskeysModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-rbac\src\index.ts ===
+
+export * from './lib/iam-feature-rbac.module';
+export * from './lib/iam-feature-rbac.module';
+
+
+
+=== START OF FILE: libs\iam\feature-rbac\src\lib\iam-feature-rbac.controller.ts ===
+
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import { IamFeatureRbacService } from './iam-feature-rbac.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express';
+
+interface AuthRequest extends Request {
+  user: { sub: string };
+}
+
+@Controller('rbac')
+@UseGuards(JwtAuthGuard) // 🔒 Protect all RBAC routes!
+export class IamFeatureRbacController {
+  constructor(private readonly rbacService: IamFeatureRbacService) {}
+
+  @Get('organizations/:orgId/members')
+  getMembers(@Param('orgId') orgId: string, @Req() req: AuthRequest) {
+    return this.rbacService.getOrganizationMembers(req.user.sub, orgId);
+  }
+
+  @Patch('organizations/:orgId/members/:userId')
+  updateRole(
+    @Param('orgId') orgId: string,
+    @Param('userId') userId: string,
+    @Body() body: { role: string },
+    @Req() req: AuthRequest,
+  ) {
+    return this.rbacService.updateMemberRole(
+      req.user.sub,
+      orgId,
+      userId,
+      body.role,
+    );
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-rbac\src\lib\iam-feature-rbac.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { IamFeatureRbacController } from './iam-feature-rbac.controller';
+import { IamFeatureRbacService } from './iam-feature-rbac.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Module({
+  controllers: [IamFeatureRbacController],
+  providers: [IamFeatureRbacService, IamPrismaService],
+  exports: [IamFeatureRbacService],
+})
+export class IamFeatureRbacModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-rbac\src\lib\iam-feature-rbac.service.ts ===
+
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Injectable()
+export class IamFeatureRbacService {
+  constructor(private readonly prisma: IamPrismaService) {}
+
+  // 1. Fetch all members of an Organization
+  async getOrganizationMembers(requesterId: string, organizationId: string) {
+    // SECURITY: Ensure the person asking is actually in the organization!
+    const membership = await this.prisma.membership.findUnique({
+      where: { userId_organizationId: { userId: requesterId, organizationId } },
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this organization');
+    }
+
+    return this.prisma.membership.findMany({
+      where: { organizationId },
+      include: {
+        user: { select: { id: true, email: true } }, // Return email, but hide passwords!
+      },
+    });
+  }
+
+  // 2. Change a user's role (e.g., MEMBER -> ADMIN)
+  async updateMemberRole(
+    requesterId: string,
+    organizationId: string,
+    targetUserId: string,
+    newRole: string,
+  ) {
+    // SECURITY: Only Admins can change roles!
+    const requester = await this.prisma.membership.findUnique({
+      where: { userId_organizationId: { userId: requesterId, organizationId } },
+    });
+
+    if (!requester || requester.role !== 'ADMIN') {
+      throw new ForbiddenException('Only organization ADMINs can change roles');
+    }
+
+    // Ensure the target user is actually in the org
+    const target = await this.prisma.membership.findUnique({
+      where: {
+        userId_organizationId: { userId: targetUserId, organizationId },
+      },
+    });
+
+    if (!target)
+      throw new NotFoundException('User is not a member of this organization');
+
+    // Perform the update
+    return this.prisma.membership.update({
+      where: { id: target.id },
+      data: { role: newRole },
+    });
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-scim\src\index.ts ===
+
+export * from './lib/iam-feature-scim.module';
+
+
+
+=== START OF FILE: libs\iam\feature-scim\src\lib\iam-feature-scim.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeatureScimModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-security\src\index.ts ===
+
+export * from './lib/iam-feature-security.module';
+
+
+
+=== START OF FILE: libs\iam\feature-security\src\lib\iam-feature-security.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeatureSecurityModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-sessions\src\index.ts ===
+
+export * from './lib/iam-feature-sessions.module';
+
+
+
+=== START OF FILE: libs\iam\feature-sessions\src\lib\iam-feature-sessions.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeatureSessionsModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-sso\src\index.ts ===
+
+export * from './lib/iam-feature-sso.module';
+
+
+
+=== START OF FILE: libs\iam\feature-sso\src\lib\iam-feature-sso.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeatureSsoModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-tenants\src\index.ts ===
+
+export * from './lib/iam-feature-tenants.module';
+
+
+
+=== START OF FILE: libs\iam\feature-tenants\src\lib\iam-feature-tenants.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeatureTenantsModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-users\src\index.ts ===
+
+export * from './lib/iam-feature-users.module';
+export * from './lib/iam-feature-users.module';
+
+
+
+=== START OF FILE: libs\iam\feature-users\src\lib\iam-feature-users.controller.ts ===
+
+import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { IamFeatureUsersService } from './iam-feature-users.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  user: { sub: string; email: string; tenantId: string };
+}
+
+@Controller('users')
+@UseGuards(JwtAuthGuard) // 🔒 Protect this route!
+export class IamFeatureUsersController {
+  constructor(private readonly usersService: IamFeatureUsersService) {}
+
+  @Get()
+  async getUsers(@Req() req: AuthenticatedRequest) {
+    const tenantId = req.user.tenantId;
+    return this.usersService.getUsersByTenant(tenantId);
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-users\src\lib\iam-feature-users.module.ts ===
+
+import { Module } from '@nestjs/common';
+import { IamFeatureUsersController } from './iam-feature-users.controller';
+import { IamFeatureUsersService } from './iam-feature-users.service';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Module({
+  controllers: [IamFeatureUsersController],
+  providers: [IamFeatureUsersService, IamPrismaService],
+  exports: [IamFeatureUsersService],
+})
+export class IamFeatureUsersModule {}
+
+
+
+=== START OF FILE: libs\iam\feature-users\src\lib\iam-feature-users.service.ts ===
+
+import { Injectable } from '@nestjs/common';
+import { IamPrismaService } from '@hellokitty/data-access';
+
+@Injectable()
+export class IamFeatureUsersService {
+  constructor(private readonly prisma: IamPrismaService) {}
+
+  async getUsersByTenant(tenantId: string) {
+    // Fetch users, but DO NOT include their password hashes!
+    return this.prisma.user.findMany({
+      where: { tenantId },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        identities: true, // If they linked Google/GitHub
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+}
+
+
+
+=== START OF FILE: libs\iam\feature-webhooks\src\index.ts ===
+
+export * from './lib/iam-feature-webhooks.module';
+
+
+
+=== START OF FILE: libs\iam\feature-webhooks\src\lib\iam-feature-webhooks.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class IamFeatureWebhooksModule {}
+
+
+
+=== START OF FILE: libs\iam\ui\src\index.ts ===
+
+export * from './lib/iam-ui';
+export * from './lib/login/login-form';
+export * from './lib/signup/signup-form';
+export * from './lib/auth-console-shell/sidebar';
+export * from './lib/auth-console-shell/top-nav';
+export * from './lib/dashboard/dashboard-view';
+export * from './lib/applications/applications-view';
+export * from './lib/users/users-view';
+export * from './lib/organizations/organizations-view';
+export * from './lib/authorize/authorize-view';
+export * from './lib/logs-table/logs-view';
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\iam-ui.tsx ===
+
+export function IamUi() {
+  return (
+    <div>
+      <h1>Welcome to IamUi!</h1>
+    </div>
+  );
+}
+
+export default IamUi;
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\applications\applications-view.tsx ===
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  AppWindow,
+  Key,
+  Copy,
+  Plus,
+  MoreHorizontal,
+  X,
+  Loader2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+// Define the shape of our data
+interface Application {
+  id: string;
+  name: string;
+  type: string;
+  clientId: string;
+  createdAt: string;
+}
+
+export function ApplicationsView() {
+  const [apps, setApps] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // ✨ Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [appName, setAppName] = useState('');
+  const [appType, setAppType] = useState('SPA');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const router = useRouter();
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        // ✨ Secure Redirect: No token? Go to login!
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+
+        const res = await fetch(`${AUTH_API}/applications`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // ✨ Secure Redirect: Token expired? Go to login!
+        if (res.status === 401) {
+          localStorage.removeItem('access_token');
+          router.push('/login');
+          return;
+        }
+
+        if (!res.ok) throw new Error('Failed to load applications');
+
+        const data = await res.json();
+        setApps(data);
+      } catch {
+        toast.error('Could not load applications.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchApplications();
+  }, [AUTH_API, router]); // ✨ Added router to dependencies
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Client ID copied to clipboard!');
+  };
+
+  // ✨ Dynamic Create App Function
+  const handleCreateApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const res = await fetch(`${AUTH_API}/applications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: appName, type: appType }),
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem('access_token');
+        router.push('/login');
+        return;
+      }
+
+      if (!res.ok) throw new Error('Failed to create application');
+
+      const newApp = await res.json();
+
+      // Add the new app to the top of the list instantly!
+      setApps([newApp, ...apps]);
+      setShowModal(false);
+      setAppName('');
+
+      toast.success('Application created successfully!');
+      toast(`Client ID: ${newApp.clientId}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 font-sans">
+      {/* Header */}
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Applications</h2>
+          <p className="text-gray-500 mt-1">
+            Setup and manage your registered applications.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Create Application
+        </button>
+      </div>
+
+      {/* Applications List */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-8 text-center text-gray-500 animate-pulse">
+            Loading applications...
+          </div>
+        ) : apps.length === 0 ? (
+          <div className="p-12 text-center">
+            <AppWindow className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">
+              No applications found
+            </h3>
+            <p className="text-gray-500 mt-1">
+              Create your first application to get started.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-gray-200">
+            {apps.map((app) => (
+              <li
+                key={app.id}
+                className="p-6 hover:bg-gray-50 transition-colors group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gray-100 text-gray-600 rounded-lg">
+                      <AppWindow className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-pink-600 transition-colors cursor-pointer">
+                        {app.name}
+                      </h3>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                          {app.type}
+                        </span>
+                        <span className="text-sm text-gray-500 flex items-center gap-1">
+                          <Key className="w-3.5 h-3.5" />
+                          Client ID:{' '}
+                          <span className="font-mono text-gray-700">
+                            {app.clientId.substring(0, 16)}...
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => copyToClipboard(app.clientId)}
+                      className="text-gray-400 hover:text-gray-900 px-3 py-1.5 border border-gray-200 bg-white rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy ID
+                    </button>
+                    <button className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                      <MoreHorizontal className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* ✨ CREATE APPLICATION MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">
+                Create Application
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateApp} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Application Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={appName}
+                  onChange={(e) => setAppName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all"
+                  placeholder="e.g. My React App"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Application Type
+                </label>
+                <select
+                  value={appType}
+                  onChange={(e) => setAppType(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all bg-white"
+                >
+                  <option value="SPA">
+                    Single Page Application (React, Vue, Angular)
+                  </option>
+                  <option value="WEB">
+                    Regular Web Application (Node, Python)
+                  </option>
+                  <option value="M2M">Machine to Machine (API to API)</option>
+                </select>
+              </div>
+
+              <div className="pt-4 flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !appName}
+                  className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Create
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\auth-console-shell\sidebar.tsx ===
+
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  LayoutDashboard,
+  AppWindow,
+  Users,
+  Building2,
+  ShieldCheck,
+  Settings,
+  Activity,
+  LogOut,
+} from 'lucide-react';
+
+const navigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Applications', href: '/applications', icon: AppWindow },
+  { name: 'Authentication', href: '/authentication', icon: ShieldCheck },
+  { name: 'Organizations', href: '/organizations', icon: Building2 },
+  { name: 'User Management', href: '/users', icon: Users },
+  { name: 'Logs & Events', href: '/event-streams', icon: Activity },
+  { name: 'Settings', href: '/settings', icon: Settings },
+];
+
+export function AuthConsoleSidebar() {
+  const pathname = usePathname();
+
+  return (
+    <aside className="w-64 bg-[#F9FAFB] border-r border-gray-200 flex flex-col h-full">
+      {/* Logo Area */}
+      <div className="h-16 flex items-center px-6 border-b border-gray-200/60 bg-white">
+        <Link
+          href="/dashboard"
+          className="text-xl font-black italic tracking-tighter text-gray-900 drop-shadow-sm"
+        >
+          HelloKitty<span className="text-pink-500">.Auth</span>
+        </Link>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+        {navigation.map((item) => {
+          const isActive = pathname.startsWith(item.href);
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                isActive
+                  ? 'bg-white text-gray-900 shadow-sm border border-gray-200/60'
+                  : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 border border-transparent'
+              }`}
+            >
+              <Icon
+                className={`w-[18px] h-[18px] ${isActive ? 'text-pink-500' : 'text-gray-400'}`}
+              />
+              {item.name}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Bottom Profile / Logout */}
+      <div className="p-4 border-t border-gray-200/60 bg-white">
+        <button
+          onClick={() => {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+          }}
+          className="flex items-center gap-3 w-full px-3 py-2 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors group"
+        >
+          <LogOut className="w-[18px] h-[18px] group-hover:text-red-500 text-gray-400" />
+          Sign Out
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\auth-console-shell\top-nav.tsx ===
+
+'use client';
+
+import { Search, Bell } from 'lucide-react';
+
+export function AuthConsoleTopNav() {
+  return (
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-10 sticky top-0">
+      {/* Left side: Context/Tenant */}
+      <div className="flex items-center gap-4">
+        <div className="flex flex-col">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            Current Tenant
+          </span>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span className="text-sm font-medium text-gray-900">
+              us-east-1 (Default)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Right side: Search & Profile */}
+      <div className="flex items-center gap-6">
+        {/* Fake Search Bar (Command Palette style) */}
+        <div className="hidden md:flex items-center px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-400 w-64 hover:bg-gray-100 transition-colors cursor-text">
+          <Search className="w-4 h-4 mr-2" />
+          Search or jump to...
+          <span className="ml-auto border border-gray-200 bg-white rounded px-1.5 text-xs text-gray-400 font-mono shadow-sm">
+            ⌘K
+          </span>
+        </div>
+
+        <button className="text-gray-400 hover:text-gray-600 transition-colors relative">
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-0 right-0 w-2 h-2 bg-pink-500 rounded-full border-2 border-white"></span>
+        </button>
+
+        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-pink-500 to-orange-400 border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"></div>
+      </div>
+    </header>
+  );
+}
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\authorize\authorize-view.tsx ===
+
+'use client';
+
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ShieldAlert, Check, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+function AuthorizeContent() {
+  const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Extract OAuth2 standard parameters from the URL
+  const clientId = searchParams.get('client_id');
+  const redirectUri = searchParams.get('redirect_uri');
+  const state = searchParams.get('state');
+
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      // Pass the current full URL so the login page knows where to send them back!
+      const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+      router.push(`/login?returnTo=${currentUrl}`);
+    } else {
+      setCheckingAuth(false);
+    }
+  }, [router]);
+
+  const handleAuthorize = async () => {
+    if (!clientId || !redirectUri) {
+      toast.error('Missing client_id or redirect_uri');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+
+      // 1. Call our secure backend to generate the 60-second code
+      const res = await fetch(`${AUTH_API}/oauth/authorize`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          redirect_uri: redirectUri,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Authorization failed');
+      }
+
+      const data = await res.json();
+
+      // 2. We got the code! Now we redirect the user BACK to the 3rd-party app.
+      // We also pass back the 'state' parameter if they provided one (OAuth2 Security standard).
+      const finalRedirectUrl = `${redirectUri}?code=${data.code}${state ? `&state=${state}` : ''}`;
+
+      toast.success('Authorized! Redirecting...');
+
+      // Send them back to the app!
+      window.location.href = finalRedirectUrl;
+    } catch (error: unknown) {
+      if (error instanceof Error) toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeny = () => {
+    if (!redirectUri) return router.push('/');
+    // Standard OAuth2 error redirect
+    window.location.href = `${redirectUri}?error=access_denied&error_description=The user denied access`;
+  };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+      </div>
+    );
+  }
+
+  if (!clientId || !redirectUri) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-red-100">
+          <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900">Invalid Request</h2>
+          <p className="text-gray-500 mt-2">
+            Missing required OAuth parameters (client_id or redirect_uri).
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans">
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 max-w-md w-full overflow-hidden">
+        {/* Header Branding */}
+        <div className="bg-gray-900 p-8 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 to-orange-400"></div>
+          <h2 className="text-2xl font-black italic tracking-tighter text-white mb-2">
+            HelloKitty.
+          </h2>
+          <p className="text-gray-400 text-sm">Identity Provider</p>
+        </div>
+
+        {/* Consent Body */}
+        <div className="p-8">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-blue-100">
+              <ShieldAlert className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">
+              Authorization Request
+            </h3>
+            <p className="text-gray-600 mt-2 text-sm leading-relaxed">
+              A third-party application is requesting access to your HelloKitty
+              account.
+            </p>
+            <div className="mt-4 inline-block bg-gray-100 px-3 py-1.5 rounded-lg text-xs font-mono text-gray-600 border border-gray-200">
+              Client ID: {clientId.substring(0, 8)}...
+            </div>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mb-8">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+              This app will be able to:
+            </p>
+            <ul className="space-y-3">
+              <li className="flex gap-3 text-sm text-gray-700 items-start">
+                <Check className="w-5 h-5 text-green-500 shrink-0" />
+                <span>Read your profile information (Name, Avatar).</span>
+              </li>
+              <li className="flex gap-3 text-sm text-gray-700 items-start">
+                <Check className="w-5 h-5 text-green-500 shrink-0" />
+                <span>Verify your verified email address.</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={handleDeny}
+              disabled={loading}
+              className="flex-1 bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAuthorize}
+              disabled={loading}
+              className="flex-1 bg-gray-900 text-white py-3 px-4 rounded-xl font-semibold hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
+            >
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              Authorize
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-gray-400 mt-6">
+            You will be redirected to: <br />
+            <span className="font-mono">{redirectUri}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✨ Wrap in Suspense because we are using Next.js useSearchParams()
+export function AuthorizeView() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+        </div>
+      }
+    >
+      <AuthorizeContent />
+    </Suspense>
+  );
+}
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\dashboard\dashboard-view.tsx ===
+
+'use client';
+
+import { useState } from 'react';
+import { Activity, AppWindow, Users, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+export function DashboardView() {
+  const [loading, setLoading] = useState(false);
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+
+  const handleCreateApp = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) throw new Error('Not authenticated');
+
+      const res = await fetch(`${AUTH_API}/applications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: 'My Awesome React App',
+          type: 'SPA',
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to create application');
+      }
+
+      const newApp = await res.json();
+
+      toast.success('Application created successfully!');
+      toast(`Your new Client ID is: ${newApp.clientId}`);
+    } catch (error: unknown) {
+      // ✨ ENTERPRISE FIX: Safe error checking without using 'any'!
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('An unexpected error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 font-sans">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+        <p className="text-gray-500 mt-1">
+          Overview of your HelloKitty Auth tenant.
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900">1</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
+              <AppWindow className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Applications</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-green-50 text-green-600 rounded-lg">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Logins (24h)</p>
+              <p className="text-2xl font-bold text-gray-900">4</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Getting Started Section */}
+      <div className="bg-gray-900 rounded-xl p-8 text-white mt-8 shadow-md">
+        <h3 className="text-xl font-bold mb-2">Getting Started</h3>
+        <p className="text-gray-400 mb-6 max-w-2xl">
+          To start authenticating users in your own applications, you need to
+          register an Application to get a Client ID.
+        </p>
+
+        <button
+          onClick={handleCreateApp}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 bg-white text-gray-900 px-5 py-2.5 rounded-lg font-semibold hover:bg-gray-100 transition-colors disabled:opacity-70"
+        >
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+          {loading ? 'Generating Keys...' : 'Create Application'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\login\login-form.tsx ===
+
+'use client';
+
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { Loader2, ShieldCheck } from 'lucide-react';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+
+function LoginFormContent() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+
+  // ✨ MFA States
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ✨ Check where the user wants to go after login (default to dashboard)
+  const returnTo = searchParams.get('returnTo') || '/dashboard';
+
+  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+
+  // ✨ HELPER: Execute the dynamic redirect!
+  const executeRedirect = () => {
+    if (returnTo.startsWith('http')) {
+      window.location.href = returnTo; // Cross-domain to Social App
+    } else {
+      router.push(returnTo); // Local domain to Admin Dashboard
+    }
+  };
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${AUTH_API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Invalid email or password');
+      }
+
+      // ✨ CHECK FOR MFA CHALLENGE!
+      if (data.mfa_required) {
+        setMfaToken(data.mfa_token);
+        toast.info('Please enter your authenticator code.');
+        return; // Stop here and wait for the user to type the 6 digits!
+      }
+
+      // NO MFA REQUIRED -> Log them straight in
+      localStorage.setItem('access_token', data.access_token);
+      if (data.refresh_token)
+        localStorage.setItem('refresh_token', data.refresh_token);
+
+      toast.success('Successfully logged in!');
+      executeRedirect(); // ✨ USE THE SMART REDIRECT
+
+    } catch (err: unknown) {
+      if (err instanceof Error) toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // 2. MFA LOGIN
+  // ---------------------------------------------------------------------------
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${AUTH_API}/auth/login/mfa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mfa_token: mfaToken, code: mfaCode }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Invalid 6-digit code');
+
+      // Success! Lock it in.
+      localStorage.setItem('access_token', data.access_token);
+      if (data.refresh_token)
+        localStorage.setItem('refresh_token', data.refresh_token);
+
+      toast.success('Successfully authenticated!');
+      executeRedirect(); // ✨ USE THE SMART REDIRECT
+
+    } catch (err: unknown) {
+      if (err instanceof Error) toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✨ Handle the Google Login Success!
+  const handleGoogleSuccess = async (credentialResponse: {
+    credential?: string;
+  }) => {
+    try {
+      // 1. Send the Google Token to our NestJS API
+      const res = await fetch(`${AUTH_API}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credentialResponse.credential }),
+      });
+
+      if (!res.ok) throw new Error('Failed to authenticate with Google');
+
+      // 2. We get back our HelloKitty JWT!
+      const data = await res.json();
+      localStorage.setItem('access_token', data.access_token);
+      if (data.refresh_token)
+        localStorage.setItem('refresh_token', data.refresh_token);
+
+      toast.success('Successfully logged in with Google!');
+      executeRedirect(); // ✨ USE THE SMART REDIRECT
+
+    } catch {
+      toast.error('Google login failed. Please try again.');
+    }
+  };
+
+  return (
+    <GoogleOAuthProvider
+      clientId={GOOGLE_CLIENT_ID || 'dummy-id-to-prevent-crash'}
+    >
+      <div className="flex min-h-screen bg-white font-sans">
+        {/* Left Pane - Form Area */}
+        <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:w-[480px] xl:w-[560px] relative">
+          <div className="absolute top-8 left-8">
+            <Link
+              href="/"
+              className="text-2xl font-black tracking-tighter italic select-none text-gray-900"
+            >
+              HelloKitty.
+            </Link>
+          </div>
+
+          <div className="mx-auto w-full max-w-sm lg:w-96">
+            {/* ✨ CONDITIONALLY RENDER THE MFA SCREEN IF A TOKEN EXISTS */}
+            {mfaToken ? (
+              <div className="animate-in fade-in zoom-in-95 duration-300">
+                <div className="text-center mb-8">
+                  <div className="mx-auto w-12 h-12 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center mb-4">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+                    Two-Step Verification
+                  </h2>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Enter the 6-digit code from your authenticator app.
+                  </p>
+                </div>
+
+                <form onSubmit={handleMfaSubmit} className="space-y-5">
+                  <div>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      maxLength={6}
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value)}
+                      className="block w-full text-center text-2xl tracking-[0.5em] font-mono rounded-xl border-0 py-3.5 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-300 focus:ring-2 focus:ring-inset focus:ring-pink-400 outline-none"
+                      placeholder="000000"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || mfaCode.length < 6}
+                    className="flex w-full justify-center items-center gap-2 rounded-full bg-[#0d0c22] py-3.5 px-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 disabled:opacity-70 transition-all"
+                  >
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {loading ? 'Verifying...' : 'Verify Code'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMfaToken(null)}
+                    className="w-full text-center text-sm font-medium text-gray-500 hover:text-gray-900 mt-4"
+                  >
+                    Cancel and go back
+                  </button>
+                </form>
+              </div>
+            ) : (
+              // ✨ OTHERWISE, SHOW THE STANDARD LOGIN SCREEN
+              <div className="animate-in fade-in duration-300">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+                    Welcome back
+                  </h2>
+                </div>
+
+                <div className="mt-8">
+                  <div className="flex justify-center w-full mb-6">
+                    {GOOGLE_CLIENT_ID ? (
+                      <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() =>
+                          toast.error('Google Login closed or failed')
+                        }
+                        theme="outline"
+                        shape="pill"
+                        size="large"
+                        text="continue_with"
+                      />
+                    ) : (
+                      <div className="w-full p-4 border border-red-200 bg-red-50 text-red-600 rounded-xl text-sm text-center font-medium">
+                        {/* ✨ Fixed: Wrapped the emoji for accessibility! */}
+                        <span role="img" aria-label="warning">
+                          ⚠️
+                        </span>{' '}
+                        NEXT_PUBLIC_GOOGLE_CLIENT_ID is missing in
+                        apps/web/.env.local
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="relative mt-4 mb-6">
+                    <div
+                      className="absolute inset-0 flex items-center"
+                      aria-hidden="true"
+                    >
+                      <div className="w-full border-t border-gray-200" />
+                    </div>
+                    <div className="relative flex justify-center text-sm font-medium leading-6">
+                      <span className="bg-white px-6 text-gray-400">or</span>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="block w-full rounded-xl border-0 py-3.5 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 hover:ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-pink-300 sm:text-sm transition-all outline-none"
+                        placeholder="Email address or username"
+                      />
+                    </div>
+
+                    <div>
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="block w-full rounded-xl border-0 py-3.5 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 hover:ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-pink-300 sm:text-sm transition-all outline-none"
+                        placeholder="Password"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex w-full justify-center items-center gap-2 rounded-full bg-[#0d0c22] py-3.5 px-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 disabled:opacity-70 transition-all"
+                    >
+                      {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {loading ? 'Continuing...' : 'Continue'}
+                    </button>
+                  </form>
+
+                  <p className="mt-6 text-center text-xs text-gray-500">
+                    By continuing, you agree to our{' '}
+                    <Link
+                      href="/terms"
+                      className="underline hover:text-gray-800"
+                    >
+                      Terms
+                    </Link>{' '}
+                    and{' '}
+                    <Link
+                      href="/privacy"
+                      className="underline hover:text-gray-800"
+                    >
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
+
+                  <p className="mt-8 text-center text-sm text-gray-600">
+                    Don't have an account?{' '}
+                    <Link
+                      href="/signup"
+                      className="font-semibold text-gray-900 hover:underline"
+                    >
+                      Sign up
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Pane - Showcase Image */}
+        <div className="relative hidden w-0 flex-1 lg:block">
+          <img
+            className="absolute inset-0 h-full w-full object-cover"
+            src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
+            alt="Abstract 3D aesthetic"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          <div className="absolute bottom-8 right-8 text-white font-medium text-sm drop-shadow-md">
+            @hellokitty_studio
+          </div>
+        </div>
+      </div>
+    </GoogleOAuthProvider>
+  );
+}
+
+// ✨ Export wrapped in Suspense (Required by Next.js to read URL Params)
+export function LoginForm() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>}>
+      <LoginFormContent />
+    </Suspense>
+  );
+}
+
+
+=== START OF FILE: libs\iam\ui\src\lib\logs-table\logs-view.tsx ===
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Activity,
+  ShieldAlert,
+  LogIn,
+  AppWindow,
+  Building2,
+  Plus,
+  Loader2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+interface AuditLog {
+  id: string;
+  action: string;
+  actor: string;
+  details: string | null;
+  createdAt: string;
+}
+
+export function LogsView() {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const router = useRouter();
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+
+  const fetchLogs = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const res = await fetch(`${AUTH_API}/logs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 401) {
+        localStorage.removeItem('access_token');
+        router.push('/login');
+        return;
+      }
+
+      if (!res.ok) throw new Error('Failed to load logs');
+
+      const data = await res.json();
+      setLogs(data);
+    } catch {
+      toast.error('Could not load audit logs.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ✨ A helper to test the system by injecting dummy events
+  const handleTestEvent = async () => {
+    setIsGenerating(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const sampleActions = [
+        'user.login',
+        'app.created',
+        'mfa.setup',
+        'org.created',
+        'user.logout',
+      ];
+      const randomAction =
+        sampleActions[Math.floor(Math.random() * sampleActions.length)];
+
+      const res = await fetch(`${AUTH_API}/logs/test-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: randomAction,
+          details: 'Triggered manually via Admin Console',
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to generate log');
+
+      toast.success(`Generated test event: ${randomAction}`);
+      fetchLogs(); // Instantly refresh the table
+    } catch (error: unknown) {
+      if (error instanceof Error) toast.error(error.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Helper to pick the right icon and color based on the action name
+  const getEventIcon = (action: string) => {
+    if (action.includes('login') || action.includes('logout')) {
+      return (
+        <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+          <LogIn className="w-4 h-4" />
+        </div>
+      );
+    }
+    if (action.includes('app')) {
+      return (
+        <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
+          <AppWindow className="w-4 h-4" />
+        </div>
+      );
+    }
+    if (action.includes('mfa') || action.includes('security')) {
+      return (
+        <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+          <ShieldAlert className="w-4 h-4" />
+        </div>
+      );
+    }
+    if (action.includes('org')) {
+      return (
+        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+          <Building2 className="w-4 h-4" />
+        </div>
+      );
+    }
+    return (
+      <div className="p-2 bg-gray-100 text-gray-600 rounded-lg">
+        <Activity className="w-4 h-4" />
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6 font-sans">
+      {/* Header */}
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Logs & Events</h2>
+          <p className="text-gray-500 mt-1">
+            Immutable audit trail of all security and administrative actions.
+          </p>
+        </div>
+        <button
+          onClick={handleTestEvent}
+          disabled={isGenerating}
+          className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4" />
+          )}
+          Generate Test Event
+        </button>
+      </div>
+
+      {/* Logs Table */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center text-gray-500 animate-pulse">
+            Fetching audit logs...
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="p-12 text-center">
+            <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">
+              No events found
+            </h3>
+            <p className="text-gray-500 mt-1">
+              Activity in this tenant will appear here automatically.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Event
+                  </th>
+                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Actor
+                  </th>
+                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Details
+                  </th>
+                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {logs.map((log) => (
+                  <tr
+                    key={log.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        {getEventIcon(log.action)}
+                        <span className="font-semibold text-gray-900 font-mono text-sm tracking-tight">
+                          {log.action}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-700 font-medium">
+                      {log.actor || 'System'}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-500 max-w-xs truncate">
+                      {log.details || '-'}
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-500 text-right whitespace-nowrap">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\organizations\organizations-view.tsx ===
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Building2, Users, Plus, X, Loader2, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface Organization {
+  id: string;
+  name: string;
+  displayName: string;
+  myRole: string;
+}
+
+export function OrganizationsView() {
+  const [orgs, setOrgs] = useState<Organization[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [orgName, setOrgName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const router = useRouter();
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+
+        const res = await fetch(`${AUTH_API}/organizations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem('access_token');
+          router.push('/login');
+          return;
+        }
+
+        if (!res.ok) throw new Error('Failed to load organizations');
+
+        const data = await res.json();
+        setOrgs(data);
+      } catch {
+        toast.error('Could not load organizations.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, [AUTH_API, router]);
+
+  const handleCreateOrg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const res = await fetch(`${AUTH_API}/organizations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: orgName }),
+      });
+
+      if (!res.ok) throw new Error('Failed to create organization');
+
+      const newOrg = await res.json();
+
+      // Update UI
+      setOrgs([{ ...newOrg, myRole: 'ADMIN' }, ...orgs]);
+      setShowModal(false);
+      setOrgName('');
+
+      toast.success('Organization created successfully!');
+    } catch (error: unknown) {
+      if (error instanceof Error) toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 font-sans">
+      {/* Header */}
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Organizations</h2>
+          <p className="text-gray-500 mt-1">
+            Manage B2B workspaces and team memberships.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Create Organization
+        </button>
+      </div>
+
+      {/* Organizations Grid */}
+      {loading ? (
+        <div className="p-12 text-center text-gray-500 animate-pulse bg-white rounded-xl border border-gray-200">
+          Loading organizations...
+        </div>
+      ) : orgs.length === 0 ? (
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-12 text-center">
+          <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900">
+            No organizations found
+          </h3>
+          <p className="text-gray-500 mt-1">
+            Create your first workspace to start collaborating.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {orgs.map((org) => (
+            <div
+              key={org.id}
+              className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-6 flex flex-col relative overflow-hidden group"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-500 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-xl font-black text-gray-400">
+                  {org.name.substring(0, 1).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">
+                    {org.name}
+                  </h3>
+                  <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 mt-1">
+                    {org.myRole}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                <div className="flex items-center text-sm text-gray-500 gap-1.5">
+                  <Users className="w-4 h-4" />
+                  <span>1 Member</span>
+                </div>
+                <button className="text-sm font-semibold text-gray-900 hover:text-pink-600 flex items-center gap-1 transition-colors">
+                  Manage <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* CREATE ORG MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">
+                Create Workspace
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateOrg} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Company / Team Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all"
+                  placeholder="e.g. Acme Corp"
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !orgName}
+                  className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Create Workspace
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\signup\signup-form.tsx ===
+
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+
+export function SignupForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // ✨ Hit the SIGNUP endpoint instead of login
+      const res = await fetch(`${AUTH_API}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || 'Failed to create account');
+      }
+
+      // ✨ Show a success toast and send them to the login page!
+      toast.success('Account created! Please sign in.');
+      router.push('/login');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error('An unexpected error occurred');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen bg-white font-sans">
+      {/* Left Pane - Form Area */}
+      <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:w-[480px] xl:w-[560px] relative">
+        {/* Brand Logo */}
+        <div className="absolute top-8 left-8">
+          <Link
+            href="/"
+            className="text-2xl font-black tracking-tighter italic select-none text-gray-900"
+          >
+            HelloKitty.
+          </Link>
+        </div>
+
+        <div className="mx-auto w-full max-w-sm lg:w-96">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+              Create an account
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Join the ultimate enterprise social platform.
+            </p>
+          </div>
+
+          <div className="mt-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-xl border-0 py-3.5 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 hover:ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-pink-300 sm:text-sm transition-all outline-none"
+                  placeholder="Email address"
+                />
+              </div>
+
+              <div>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full rounded-xl border-0 py-3.5 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 hover:ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-pink-300 sm:text-sm transition-all outline-none"
+                  placeholder="Create a password (min 8 chars)"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex w-full justify-center items-center gap-2 rounded-full bg-[#0d0c22] py-3.5 px-3 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 disabled:opacity-70 transition-all"
+              >
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading ? 'Creating account...' : 'Sign Up'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-xs text-gray-500">
+              By signing up, you agree to our{' '}
+              <Link href="/terms" className="underline hover:text-gray-800">
+                Terms
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="underline hover:text-gray-800">
+                Privacy Policy
+              </Link>
+              .
+            </p>
+
+            <p className="mt-8 text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link
+                href="/login"
+                className="font-semibold text-gray-900 hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Pane - Showcase Image */}
+      <div className="relative hidden w-0 flex-1 lg:block">
+        <img
+          className="absolute inset-0 h-full w-full object-cover"
+          src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
+          alt="Abstract 3D aesthetic"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        <div className="absolute bottom-8 right-8 text-white font-medium text-sm drop-shadow-md">
+          @hellokitty_studio
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+=== START OF FILE: libs\iam\ui\src\lib\users\users-view.tsx ===
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; // ✨ Import router
+import { User, Search, MoreHorizontal, Plus, X, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface UserData {
+  id: string;
+  email: string;
+  status: string;
+  emailVerified: boolean;
+  createdAt: string;
+}
+
+export function UsersView() {
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
+  // ✨ Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const router = useRouter(); // ✨ Initialize router
+  const AUTH_API =
+    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        // ✨ Secure Redirect
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+
+        const res = await fetch(`${AUTH_API}/users`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        // ✨ Secure Redirect for expired tokens
+        if (res.status === 401) {
+          localStorage.removeItem('access_token');
+          router.push('/login');
+          return;
+        }
+
+        if (!res.ok) throw new Error('Failed to load users');
+
+        const data = await res.json();
+        setUsers(data);
+        // ✨ Removed the unused 'error' variable here
+      } catch {
+        toast.error('Could not load users.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [AUTH_API, router]); // ✨ Added router to dependencies
+
+  // ✨ Dynamic Create User Function
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      // We can use the signup endpoint we built earlier to quickly create users!
+      const res = await fetch(`${AUTH_API}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to create user');
+      }
+
+      const newUser = await res.json();
+
+      // Update the list instantly
+      setUsers([newUser, ...users]);
+      setShowModal(false);
+      setEmail('');
+      setPassword('');
+
+      toast.success('User created successfully!');
+    } catch (error: unknown) {
+      if (error instanceof Error) toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredUsers = users.filter((user) =>
+    user.email.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return (
+    <div className="space-y-6 font-sans">
+      {/* Header */}
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
+          <p className="text-gray-500 mt-1">
+            View and manage users within this tenant.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Create User
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search users by email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 transition-all text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Users Table */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center text-gray-500 animate-pulse">
+            Loading directory...
+          </div>
+        ) : users.length === 0 ? (
+          <div className="p-12 text-center">
+            <User className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">
+              No users found
+            </h3>
+            <p className="text-gray-500 mt-1">
+              There are no users in this tenant yet.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Joined
+                  </th>
+                  <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredUsers.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
+                          {user.email[0]}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {user.email}
+                          </div>
+                          <div className="text-xs text-gray-500 font-mono mt-0.5">
+                            {user.id.substring(0, 13)}...
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center gap-2">
+                        {user.status === 'ACTIVE' ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>{' '}
+                            Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>{' '}
+                            Blocked
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-500">
+                      {new Date(user.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <button className="text-gray-400 hover:text-gray-900 transition-colors p-1 rounded-md hover:bg-gray-100">
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ✨ CREATE USER MODAL */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900">
+                Create New User
+              </h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  autoFocus
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all"
+                  placeholder="user@company.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Temporary Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all"
+                  placeholder="Minimum 8 characters"
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !email || password.length < 8}
+                  className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Create User
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 
@@ -1196,14 +5509,332 @@ export function utilsCrypto(): string {
 
 
 
+=== START OF FILE: libs\shared\cache\src\index.ts ===
+
+export * from './lib/shared-cache.module';
+
+
+
+=== START OF FILE: libs\shared\cache\src\lib\shared-cache.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SharedCacheModule {}
+
+
+
+=== START OF FILE: libs\shared\config\src\index.ts ===
+
+export * from './lib/shared-config';
+
+
+
+=== START OF FILE: libs\shared\config\src\lib\shared-config.ts ===
+
+export function sharedConfig(): string {
+  return 'shared-config';
+}
+
+
+
+=== START OF FILE: libs\shared\errors\src\index.ts ===
+
+export * from './lib/shared-errors.module';
+
+
+
+=== START OF FILE: libs\shared\errors\src\lib\shared-errors.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SharedErrorsModule {}
+
+
+
+=== START OF FILE: libs\shared\events\src\index.ts ===
+
+export * from './lib/shared-events';
+
+
+
+=== START OF FILE: libs\shared\events\src\lib\shared-events.ts ===
+
+export function sharedEvents(): string {
+  return 'shared-events';
+}
+
+
+
+=== START OF FILE: libs\shared\logger\src\index.ts ===
+
+export * from './lib/shared-logger.module';
+
+
+
+=== START OF FILE: libs\shared\logger\src\lib\shared-logger.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SharedLoggerModule {}
+
+
+
+=== START OF FILE: libs\shared\mail\src\index.ts ===
+
+export * from './lib/shared-mail.module';
+
+
+
+=== START OF FILE: libs\shared\mail\src\lib\shared-mail.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SharedMailModule {}
+
+
+
+=== START OF FILE: libs\shared\queues\src\index.ts ===
+
+export * from './lib/shared-queues.module';
+
+
+
+=== START OF FILE: libs\shared\queues\src\lib\shared-queues.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SharedQueuesModule {}
+
+
+
+=== START OF FILE: libs\shared\security\src\index.ts ===
+
+export * from './lib/shared-security.module';
+export * from './lib/jwt-auth.guard';
+
+
+
+=== START OF FILE: libs\shared\security\src\lib\jwt-auth.guard.ts ===
+
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
+
+@Injectable()
+export class JwtAuthGuard implements CanActivate {
+  constructor(private jwtService: JwtService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const token = this.extractTokenFromHeader(request);
+
+    if (!token) {
+      throw new UnauthorizedException('Missing authentication token');
+    }
+
+    try {
+      // ✨ Verify the token signature using the shared secret
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret:
+          process.env['JWT_SECRET'] || 'super-secret-dev-key-change-in-prod',
+      });
+
+      // ✨ Attach the user's data (ID, Email, TenantId) directly to the request!
+      request['user'] = payload;
+    } catch {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+    return true;
+  }
+
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
+}
+
+
+
+=== START OF FILE: libs\shared\security\src\lib\shared-security.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SharedSecurityModule {}
+
+
+
+=== START OF FILE: libs\shared\sms\src\index.ts ===
+
+export * from './lib/shared-sms.module';
+
+
+
+=== START OF FILE: libs\shared\sms\src\lib\shared-sms.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SharedSmsModule {}
+
+
+
+=== START OF FILE: libs\shared\storage\src\index.ts ===
+
+export * from './lib/shared-storage.module';
+export * from './lib/cloudinary.service';
+
+
+
+=== START OF FILE: libs\shared\storage\src\lib\cloudinary.service.ts ===
+
+// apps/core-api/src/app/cloudinary.service.ts
+import { Injectable, Logger } from '@nestjs/common';
+import { v2 as cloudinary } from 'cloudinary';
+
+@Injectable()
+export class CloudinaryService {
+  private readonly logger = new Logger(CloudinaryService.name);
+
+  constructor() {
+    // This connects to Cloudinary using your .env variables!
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+    this.logger.log('Cloudinary successfully initialized ☁️');
+  }
+
+  // A reusable function to upload any image or video!
+  async uploadFile(
+    filePath: string,
+    folder = 'hellokitty_posts',
+  ): Promise<string> {
+    try {
+      const result = await cloudinary.uploader.upload(filePath, {
+        folder: folder,
+        resource_type: 'auto', // Automatically detects if it's an image or video
+      });
+      return result.secure_url;
+    } catch (error) {
+      this.logger.error('Failed to upload file to Cloudinary', error);
+      throw new Error('Media upload failed');
+    }
+  }
+}
+
+
+
+=== START OF FILE: libs\shared\storage\src\lib\shared-storage.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SharedStorageModule {}
+
+
+
+=== START OF FILE: libs\shared\testing\src\index.ts ===
+
+export * from './lib/shared-testing';
+
+
+
+=== START OF FILE: libs\shared\testing\src\lib\shared-testing.ts ===
+
+export function sharedTesting(): string {
+  return 'shared-testing';
+}
+
+
+
+=== START OF FILE: libs\shared\ui\src\index.ts ===
+
+export * from './lib/shared-ui';
+
+
+
+=== START OF FILE: libs\shared\ui\src\lib\shared-ui.tsx ===
+
+export function SharedUi() {
+  return (
+    <div>
+      <h1>Welcome to SharedUi!</h1>
+    </div>
+  );
+}
+
+export default SharedUi;
+
+
+
+=== START OF FILE: libs\shared\validation\src\index.ts ===
+
+export * from './lib/shared-validation';
+
+
+
+=== START OF FILE: libs\shared\validation\src\lib\shared-validation.ts ===
+
+export function sharedValidation(): string {
+  return 'shared-validation';
+}
+
+
+
 === START OF FILE: libs\social\data-access\prisma\schema.prisma ===
 
 datasource db {
   provider = "mongodb"
+  url      = env("MONGO_URL") 
 }
 
 generator client {
   provider = "prisma-client-js"
+  // ✨ Back to its own standalone folder!
   output   = "../../../../node_modules/@prisma/client-social" 
 }
 
@@ -1242,13 +5873,19 @@ export * from './lib/social-data-access';
 export * from './lib/prisma.service';
 
 
+
 === START OF FILE: libs\social\data-access\src\lib\prisma.service.ts ===
 
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client-social';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
+  // ❌ Remove the constructor entirely! Prisma v6 doesn't need it.
+
   async onModuleInit() {
     await this.$connect();
   }
@@ -1259,11 +5896,423 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 }
 
 
+
 === START OF FILE: libs\social\data-access\src\lib\social-data-access.ts ===
 
 export function socialDataAccess(): string {
   return 'social-data-access';
 }
+
+
+
+=== START OF FILE: libs\social\domain\src\index.ts ===
+
+export * from './lib/social-domain';
+
+
+
+=== START OF FILE: libs\social\domain\src\lib\social-domain.ts ===
+
+export function socialDomain(): string {
+  return 'social-domain';
+}
+
+
+
+=== START OF FILE: libs\social\feature-comments\src\index.ts ===
+
+export * from './lib/social-feature-comments.module';
+
+
+
+=== START OF FILE: libs\social\feature-comments\src\lib\social-feature-comments.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureCommentsModule {}
+
+
+
+=== START OF FILE: libs\social\feature-feed\src\index.ts ===
+
+export * from './lib/social-feature-feed.module';
+
+
+
+=== START OF FILE: libs\social\feature-feed\src\lib\social-feature-feed.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureFeedModule {}
+
+
+
+=== START OF FILE: libs\social\feature-follows\src\index.ts ===
+
+export * from './lib/social-feature-follows.module';
+
+
+
+=== START OF FILE: libs\social\feature-follows\src\lib\social-feature-follows.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureFollowsModule {}
+
+
+
+=== START OF FILE: libs\social\feature-likes\src\index.ts ===
+
+export * from './lib/social-feature-likes.module';
+
+
+
+=== START OF FILE: libs\social\feature-likes\src\lib\social-feature-likes.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureLikesModule {}
+
+
+
+=== START OF FILE: libs\social\feature-media\src\index.ts ===
+
+export * from './lib/social-feature-media.module';
+
+
+
+=== START OF FILE: libs\social\feature-media\src\lib\social-feature-media.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureMediaModule {}
+
+
+
+=== START OF FILE: libs\social\feature-messages\src\index.ts ===
+
+export * from './lib/social-feature-messages.module';
+
+
+
+=== START OF FILE: libs\social\feature-messages\src\lib\social-feature-messages.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureMessagesModule {}
+
+
+
+=== START OF FILE: libs\social\feature-moderation\src\index.ts ===
+
+export * from './lib/social-feature-moderation.module';
+
+
+
+=== START OF FILE: libs\social\feature-moderation\src\lib\social-feature-moderation.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureModerationModule {}
+
+
+
+=== START OF FILE: libs\social\feature-notifications\src\index.ts ===
+
+export * from './lib/social-feature-notifications.module';
+
+
+
+=== START OF FILE: libs\social\feature-notifications\src\lib\social-feature-notifications.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureNotificationsModule {}
+
+
+
+=== START OF FILE: libs\social\feature-posts\src\index.ts ===
+
+export * from './lib/social-feature-posts.module';
+export * from './lib/posts.module';
+
+
+
+=== START OF FILE: libs\social\feature-posts\src\lib\posts.controller.ts ===
+
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseInterceptors,
+  UploadedFile,
+  UseGuards,
+  Req, // ✨ Added Req import
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
+import { PostsService } from './posts.service';
+import 'multer'; // Tells TypeScript to load the Multer types
+import { JwtAuthGuard } from '@hellokitty/shared-security';
+import { Request } from 'express'; // ✨ Import Request from Express
+
+// ✨ 1. We teach TypeScript exactly what data our JWT token holds!
+interface AuthenticatedRequest extends Request {
+  user: {
+    sub: string;
+    email: string;
+    tenantId: string;
+  };
+}
+
+@Controller('posts')
+@UseGuards(JwtAuthGuard) // ✨ THIS PROTECTS EVERY ENDPOINT IN THIS FILE!
+export class PostsController {
+  constructor(private readonly postsService: PostsService) {}
+
+  @Post()
+  @UseInterceptors(FileInterceptor('file'))
+  create(
+    @Body() body: { content?: string },
+    // ✨ 2. Replaced 'any' with our strict custom type!
+    @Req() req: AuthenticatedRequest,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    // ✨ Extract the secure authorId from the decoded token payload
+    const secureAuthorId = req.user.sub;
+
+    return this.postsService.createPost(
+      {
+        content: body.content,
+        authorId: secureAuthorId, // 🔒 100% verified identity
+      },
+      file,
+    );
+  }
+
+  @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey('global_feed')
+  @CacheTTL(10000) // 10 seconds
+  findAll() {
+    return this.postsService.findAll();
+  }
+}
+
+
+
+=== START OF FILE: libs\social\feature-posts\src\lib\posts.module.ts ===
+
+// apps/core-api/src/app/posts/posts.module.ts
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { MulterModule } from '@nestjs/platform-express';
+import { PostsService } from './posts.service';
+import { PostsController } from './posts.controller';
+import { CloudinaryService } from '@hellokitty/shared-storage';
+import { PrismaService } from '@hellokitty/social/data-access';
+
+@Module({
+  imports: [
+    // 1. Create a Redis Queue named 'media-upload'
+    BullModule.registerQueue({
+      name: 'media-upload',
+    }),
+    // 2. Tell Multer to save uploaded files to a temp folder
+    MulterModule.register({
+      dest: './tmp/uploads',
+    }),
+  ],
+  controllers: [PostsController],
+  providers: [PostsService, CloudinaryService, PrismaService],
+})
+export class PostsModule {}
+
+
+
+=== START OF FILE: libs\social\feature-posts\src\lib\posts.service.ts ===
+
+// apps/core-api/src/app/posts/posts.service.ts
+import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import 'multer';
+
+// 1. Get PrismaService from your custom Nx library
+import { PrismaService } from '@hellokitty/social/data-access';
+// 2. Get the generated types (MediaType) directly from the client
+import { MediaType } from '@prisma/client-social';
+
+@Injectable()
+export class PostsService {
+  constructor(
+    private readonly prisma: PrismaService,
+    // Notice we removed CloudinaryService here! Only the Worker needs it now.
+    @InjectQueue('media-upload') private readonly mediaQueue: Queue,
+  ) {}
+
+  async createPost(
+    data: { content?: string; authorId: string },
+    file?: Express.Multer.File,
+  ) {
+    const isVideo = file?.mimetype.startsWith('video') || false;
+
+    // ✨ THE BRIDGE: Find or create the MongoDB UserProfile using the Postgres UUID!
+    const profile = await this.prisma.userProfile.upsert({
+      where: { userId: data.authorId }, // Look up by Postgres UUID from the JWT
+      update: {},
+      create: {
+        userId: data.authorId,
+        username: `user_${data.authorId.substring(0, 8)}`,
+        displayName: 'New User',
+      },
+    });
+
+    // 1. Save to DB INSTANTLY (Notice mediaUrl is null for now)
+    const post = await this.prisma.post.create({
+      data: {
+        content: data.content,
+        mediaType: file
+          ? isVideo
+            ? MediaType.VIDEO
+            : MediaType.IMAGE
+          : MediaType.TEXT,
+        authorId: profile.id, // 🔒 FIX: Use the MongoDB ObjectId!
+      },
+    });
+
+    // 2. If there is a file, drop it into the Redis Queue!
+    if (file) {
+      await this.mediaQueue.add('upload-job', {
+        postId: post.id,
+        filePath: file.path,
+        isVideo,
+      });
+    }
+
+    // 3. Return the post immediately to the user! Lightning fast ⚡
+    return post;
+  }
+
+  findAll() {
+    return this.prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { author: true },
+    });
+  }
+}
+
+
+
+=== START OF FILE: libs\social\feature-posts\src\lib\social-feature-posts.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeaturePostsModule {}
+
+
+
+=== START OF FILE: libs\social\feature-profiles\src\index.ts ===
+
+export * from './lib/social-feature-profiles.module';
+
+
+
+=== START OF FILE: libs\social\feature-profiles\src\lib\social-feature-profiles.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureProfilesModule {}
+
+
+
+=== START OF FILE: libs\social\feature-search\src\index.ts ===
+
+export * from './lib/social-feature-search.module';
+
+
+
+=== START OF FILE: libs\social\feature-search\src\lib\social-feature-search.module.ts ===
+
+import { Module } from '@nestjs/common';
+
+@Module({
+  controllers: [],
+  providers: [],
+  exports: [],
+})
+export class SocialFeatureSearchModule {}
+
+
+
+=== START OF FILE: libs\social\ui\src\index.ts ===
+
+export * from './lib/social-ui';
+
+
+
+=== START OF FILE: libs\social\ui\src\lib\social-ui.tsx ===
+
+export function SocialUi() {
+  return (
+    <div>
+      <h1>Welcome to SocialUi!</h1>
+    </div>
+  );
+}
+
+export default SocialUi;
 
 
 
@@ -1296,6 +6345,7 @@ export interface Post {
   author?: SocialProfile;
   createdAt: Date;
 }
+
 
 
 === START OF FILE: libs\types\src\lib\types.ts ===

@@ -8,16 +8,37 @@ import * as speakeasy from 'speakeasy';
 export class IamFeatureMfaService {
   constructor(private readonly prisma: IamPrismaService) {}
 
+  // ✨ NEW: Check if the user has a verified TOTP MFA Factor
+  async getMfaStatus(userId: string) {
+    const factor = await this.prisma.mfaFactor.findFirst({
+      where: { userId, type: 'TOTP', verified: true },
+    });
+    return { enabled: !!factor };
+  }
+
   // 1. SETUP: Generate the Secret and QR Code
   async generateSecret(userId: string, email: string) {
-    // ✨ Speakeasy generates the secret and the URL automatically!
+    // ✨ FIX: Increased length to 20 bytes (160 bits). 
+    // This generates exactly 32 Base32 characters with NO '=' padding.
+    // Google Authenticator requires >= 128 bits and often fails on padding!
     const secret = speakeasy.generateSecret({
-      name: `HelloKitty Auth (${email})`,
-      issuer: 'HelloKitty',
+      length: 20, 
     });
 
-    // Turn the URI into a Base64 Image string so React can display it instantly!
-    const qrCodeDataUrl = await qrcode.toDataURL(secret.otpauth_url as string);
+    // ✨ Production Polish 1: Force Base32 to UPPERCASE (RFC 4648 compliance)
+    // This prevents manual-entry failures on strict or older authenticator devices.
+    const base32Secret = secret.base32.toUpperCase(); 
+
+    const issuer = 'HelloKitty';
+    const cleanEmail = email.trim();
+
+   // ✨ Production Polish 2: Standard-Compliant OIDC URI Formatting
+    // We encode the Issuer and Email individually, leaving the colon separator unencoded.
+    const label = `${encodeURIComponent(issuer)}:${encodeURIComponent(cleanEmail)}`;
+    const otpauthUrl = `otpauth://totp/${label}?secret=${base32Secret}&issuer=${encodeURIComponent(issuer)}`;
+
+    // Convert the compliant URL into a Base64 QR Code image
+    const qrCodeDataUrl = await qrcode.toDataURL(otpauthUrl);
 
     // Delete any previous UNVERIFIED setup attempts for this user
     await this.prisma.mfaFactor.deleteMany({
@@ -29,13 +50,13 @@ export class IamFeatureMfaService {
       data: {
         userId,
         type: 'TOTP',
-        secret: secret.base32,
+        secret: base32Secret,
         verified: false,
       },
     });
 
     // Return the image and the text-based secret
-    return { secret: secret.base32, qrCodeDataUrl };
+    return { secret: base32Secret, qrCodeDataUrl };
   }
 
   // 2. VERIFY: Check the 6-digit code and lock it in!
@@ -70,5 +91,13 @@ export class IamFeatureMfaService {
     });
 
     return { success: true, message: 'MFA successfully enabled!' };
+  }
+
+  // ✨ NEW: Disable MFA (Delete user's TOTP factor)
+  async disableMfa(userId: string) {
+    await this.prisma.mfaFactor.deleteMany({
+      where: { userId, type: 'TOTP' },
+    });
+    return { success: true, message: 'MFA successfully disabled!' };
   }
 }

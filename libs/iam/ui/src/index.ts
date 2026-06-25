@@ -9,3 +9,5 @@ export * from './lib/users/users-view';
 export * from './lib/organizations/organizations-view';
 export * from './lib/authorize/authorize-view';
 export * from './lib/logs-table/logs-view';
+export * from './lib/mfa/mfa-setup-view';
+export * from './lib/org-switcher/org-switcher';

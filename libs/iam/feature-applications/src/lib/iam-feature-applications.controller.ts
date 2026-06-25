@@ -19,7 +19,9 @@ export class IamFeatureApplicationsController {
   ) {
     // ✨ Extract the tenantId securely from the JWT token!
     const tenantId = req.user.tenantId;
-    return this.appsService.createApplication(tenantId, body.name, body.type);
+    const email = req.user.email; // ✨ Grab the user's email
+
+    return this.appsService.createApplication(tenantId, body.name, body.type, email);
   }
 
   @Get()

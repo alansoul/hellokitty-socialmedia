@@ -1,5 +1,5 @@
 
-npx tree-node-cli -a -L 6 -I "node_modules|.git|.venv|dist|build|.next|.idea|.vscode|.husky|tmp|.nx|minio_data" > project_structure.txt
+npx tree-node-cli -a -L 8 -I "node_modules|.git|.venv|dist|build|.next|.idea|.vscode|.husky|tmp|.nx|minio_data" > project_structure.txt
 
 
 npx nx serve core-api --output-style=stream

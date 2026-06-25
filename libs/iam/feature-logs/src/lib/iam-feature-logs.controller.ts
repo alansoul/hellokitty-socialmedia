@@ -19,7 +19,15 @@ export class IamFeatureLogsController {
 
   // ✨ A test endpoint so we can manually trigger logs from the UI
   @Post('test-event')
-  async createTestEvent(@Req() req: AuthRequest, @Body() body: { action: string, details: string }) {
-    return this.logsService.logEvent(req.user.tenantId, body.action, req.user.email, body.details);
+  async createTestEvent(
+    @Req() req: AuthRequest,
+    @Body() body: { action: string; details: string },
+  ) {
+    return this.logsService.logEvent(
+      req.user.tenantId,
+      body.action,
+      req.user.email,
+      body.details,
+    );
   }
 }

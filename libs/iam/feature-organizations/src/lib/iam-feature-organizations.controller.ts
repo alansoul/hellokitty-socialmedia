@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req, Param  } from '@nestjs/common';
 import { IamFeatureOrganizationsService } from './iam-feature-organizations.service';
 import { JwtAuthGuard } from '@hellokitty/shared-security';
 import { Request } from 'express';
@@ -26,5 +26,27 @@ export class IamFeatureOrganizationsController {
   async getMyOrgs(@Req() req: AuthenticatedRequest) {
     const userId = req.user.sub;
     return this.orgsService.getUserOrganizations(userId);
+  }
+   // ✨ NEW: Invite User to Organization
+  @Post(':orgId/invitations')
+  async inviteUser(
+    @Param('orgId') orgId: string,
+    @Body() body: { email: string; role: string },
+    @Req() req: AuthenticatedRequest
+  ) {
+    const tenantId = req.user.tenantId;
+    const requesterId = req.user.sub;
+    return this.orgsService.inviteUser(tenantId, orgId, body.email, body.role, requesterId);
+  }
+
+  // ✨ NEW: Accept Invitation
+  @Post('invitations/accept')
+  async acceptInvitation(
+    @Body() body: { token: string },
+    @Req() req: AuthenticatedRequest
+  ) {
+    const userId = req.user.sub;
+    const userEmail = req.user.email;
+    return this.orgsService.acceptInvitation(body.token, userId, userEmail);
   }
 }

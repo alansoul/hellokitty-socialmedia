@@ -123,6 +123,7 @@ model Organization {
   displayName    String?  @map("display_name")
   
   memberships    Membership[]
+  invitations    Invitation[] // ✨ Added relation link
 
   @@map("organizations")
 }
@@ -140,6 +141,25 @@ model Membership {
   @@unique([userId, organizationId])
   @@map("memberships")
 }
+
+// ✨ NEW: B2B Membership Invitation Model
+model Invitation {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email          String       @db.VarChar(255)
+  role           String       @default("MEMBER") // ADMIN, MEMBER
+  token          String       @unique            // Cryptographic secure token
+  expiresAt      DateTime     @map("expires_at")
+  accepted       Boolean      @default(false)
+
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@index([organizationId])
+  @@map("invitations")
+}
+
 
 // -----------------------------------------------------------------------------
 // 4. SESSIONS & TOKENS (OIDC)

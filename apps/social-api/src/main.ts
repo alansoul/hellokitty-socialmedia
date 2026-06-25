@@ -1,10 +1,28 @@
-// apps/social-api/src/main.ts
+import 'dotenv/config'; // ✨ Added: Force loads the workspace .env variables on boot
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+
+  // 🔍 DIAGNOSTIC: Verify if social-api can see the Public Key
+  const publicKey = process.env['JWT_PUBLIC_KEY'];
+  if (!publicKey) {
+    logger.error(
+      '❌ CRITICAL ERROR: JWT_PUBLIC_KEY is undefined in social-api! ' +
+      'Please ensure you copied the public key into the ROOT .env file.'
+    );
+  } else {
+    logger.log('🔑 JWT_PUBLIC_KEY successfully loaded into social-api memory.');
+  }
+
   const app = await NestFactory.create(AppModule);
+
+  // ✨ Activate Cookie Parser Middleware
+  app.use(cookieParser());
+
 
   // ✨ Allow both localhost and Vercel to access this API
   const allowedOrigins = [
@@ -14,7 +32,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: allowedOrigins,
-    credentials: true,
+    credentials: true,  // Required to allow cookies to traverse across ports!
   });
 
   const globalPrefix = 'api';

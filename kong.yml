@@ -2,35 +2,41 @@ _format_version: '3.0'
 
 services:
   # -----------------------------------------------------
-  # 1. AUTH DOMAIN (Identity, Login, MFA)
+  # 1. AUTH API GATEWAY (Identity, OIDC, Oauth, Admin Management)
   # -----------------------------------------------------
   - name: auth-api-service
-    # host.docker.internal points back to your Windows machine (Port 3001)
+    # host.docker.internal points back to your local machine (Port 3001)
     url: http://host.docker.internal:3001
     routes:
       - name: auth-routes
         paths:
-          - /api/auth # All login/signup requests go here
-        strip_path: false # Keeps the '/api/auth' prefix when sending to NestJS
+          - /api/auth           # Signup, Login, MFA
+          - /api/oauth          # Authorize, Token exchange
+          - /api/.well-known    # OIDC Discovery & JWKS key board
+          - /api/oidc           # UserInfo Profile endpoint
+          - /api/users          # Admin user directory
+          - /api/applications   # Admin applications registry
+          - /api/organizations  # Admin B2B workspaces
+          - /api/logs           # Admin immutable auditing logs
+        strip_path: false       # Keeps the '/api' prefix when routing to NestJS
 
   # -----------------------------------------------------
-  # 2. SOCIAL DOMAIN (Posts, Likes, Comments, Profiles)
+  # 2. SOCIAL API GATEWAY (Feed, Posts, Comments, Profiles)
   # -----------------------------------------------------
   - name: social-api-service
-    # host.docker.internal points back to your Windows machine (Port 3002)
     url: http://host.docker.internal:3002
     routes:
       - name: social-routes
         paths:
-          - /api/posts # The posts controller we just moved!
-          - /api/profiles # For user social profiles
-          - /api/comments # For post comments
+          - /api/posts
+          - /api/profiles
+          - /api/comments
         strip_path: false
 
-# ✨ ENTERPRISE ADDITION: Global Plugins
+# Global Rate Limiting to prevent brute-force attacks
 plugins:
   - name: rate-limiting
     config:
-      minute: 100 # Allow 100 requests per minute per user
+      minute: 100
       policy: local
       fault_tolerant: true

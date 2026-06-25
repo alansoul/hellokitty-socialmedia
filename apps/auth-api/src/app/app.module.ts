@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+
 import { IamFeatureAuthModule } from '@hellokitty/feature-auth';
 import { IamFeatureApplicationsModule } from '@hellokitty/iam-feature-applications';
 import { IamFeatureUsersModule } from '@hellokitty/iam-feature-users';
@@ -13,6 +15,7 @@ import { IamFeatureLogsModule } from '@hellokitty/iam-feature-logs';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(), // ✨ Activates the global Event Bus
     IamFeatureAuthModule,
     IamFeatureApplicationsModule,
     IamFeatureUsersModule,
@@ -22,6 +25,7 @@ import { IamFeatureLogsModule } from '@hellokitty/iam-feature-logs';
     IamFeatureMfaModule,
     IamFeatureRbacModule,
     IamFeatureLogsModule,
+    
   ],
   controllers: [AppController],
   providers: [AppService],

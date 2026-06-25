@@ -1,25 +1,40 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
-export function LoginForm() {
+function LoginFormContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+
 
   // ✨ MFA States
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState('');
 
-  const AUTH_API =
-    process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ✨ Check where the user wants to go after login (default to dashboard)
+  const returnTo = searchParams.get('returnTo') || '/dashboard';
+
+  const AUTH_API = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
   const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+
+  // ✨ HELPER: Execute the dynamic redirect!
+  const executeRedirect = () => {
+    if (returnTo.startsWith('http')) {
+      window.location.href = returnTo; // Cross-domain to Social App
+    } else {
+      router.push(returnTo); // Local domain to Admin Dashboard
+    }
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +45,7 @@ export function LoginForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // ✨ REQUIRED for cross-origin cookies!
       });
 
       const data = await res.json();
@@ -51,7 +67,8 @@ export function LoginForm() {
         localStorage.setItem('refresh_token', data.refresh_token);
 
       toast.success('Successfully logged in!');
-      router.push('/');
+      executeRedirect(); // ✨ USE THE SMART REDIRECT
+
     } catch (err: unknown) {
       if (err instanceof Error) toast.error(err.message);
     } finally {
@@ -71,6 +88,7 @@ export function LoginForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mfa_token: mfaToken, code: mfaCode }),
+        credentials: 'include', // ✨ REQUIRED for cross-origin cookies!
       });
 
       const data = await res.json();
@@ -83,7 +101,8 @@ export function LoginForm() {
         localStorage.setItem('refresh_token', data.refresh_token);
 
       toast.success('Successfully authenticated!');
-      router.push('/');
+      executeRedirect(); // ✨ USE THE SMART REDIRECT
+
     } catch (err: unknown) {
       if (err instanceof Error) toast.error(err.message);
     } finally {
@@ -112,7 +131,8 @@ export function LoginForm() {
         localStorage.setItem('refresh_token', data.refresh_token);
 
       toast.success('Successfully logged in with Google!');
-      router.push('/');
+      executeRedirect(); // ✨ USE THE SMART REDIRECT
+
     } catch {
       toast.error('Google login failed. Please try again.');
     }
@@ -309,5 +329,14 @@ export function LoginForm() {
         </div>
       </div>
     </GoogleOAuthProvider>
+  );
+}
+
+// ✨ Export wrapped in Suspense (Required by Next.js to read URL Params)
+export function LoginForm() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="w-8 h-8 animate-spin text-pink-500" /></div>}>
+      <LoginFormContent />
+    </Suspense>
   );
 }

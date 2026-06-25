@@ -17,16 +17,19 @@ function AuthorizeContent() {
   const redirectUri = searchParams.get('redirect_uri');
   const state = searchParams.get('state');
 
+  // ✨ Read the PKCE challenge fields from the URL parameters
+  const codeChallenge = searchParams.get('code_challenge');
+  const codeChallengeMethod = searchParams.get('code_challenge_method') || 'S256';
+
   const AUTH_API =
     process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      // If they aren't logged in, they can't authorize the app!
-      // In a production app, we would pass a ?returnTo parameter here.
-      toast.error('You must be logged in to authorize this application.');
-      router.push('/login');
+      // Pass the current full URL so the login page knows where to send them back!
+      const currentUrl = encodeURIComponent(window.location.pathname + window.location.search);
+      router.push(`/login?returnTo=${currentUrl}`);
     } else {
       setCheckingAuth(false);
     }
@@ -52,7 +55,10 @@ function AuthorizeContent() {
         body: JSON.stringify({
           client_id: clientId,
           redirect_uri: redirectUri,
+          code_challenge: codeChallenge,                // ✨ Forward challenge
+          code_challenge_method: codeChallengeMethod,   // ✨ Forward method
         }),
+        credentials: 'include', // ✨ REQUIRED for cross-origin cookies!
       });
 
       if (!res.ok) {

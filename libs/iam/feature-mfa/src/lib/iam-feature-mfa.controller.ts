@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req } from '@nestjs/common';
 import { IamFeatureMfaService } from './iam-feature-mfa.service';
 import { JwtAuthGuard } from '@hellokitty/shared-security';
 import { Request } from 'express';
@@ -12,6 +12,12 @@ interface AuthenticatedRequest extends Request {
 export class IamFeatureMfaController {
   constructor(private readonly mfaService: IamFeatureMfaService) {}
 
+   // ✨ NEW: Fetch MFA Status
+  @Get('status')
+  async getMfaStatus(@Req() req: AuthenticatedRequest) {
+    return this.mfaService.getMfaStatus(req.user.sub);
+  }
+
   @Post('setup')
   async setupMfa(@Req() req: AuthenticatedRequest) {
     // We pass the email so it shows up nicely in the Google Authenticator App
@@ -24,5 +30,11 @@ export class IamFeatureMfaController {
     @Body() body: { code: string },
   ) {
     return this.mfaService.verifyAndEnable(req.user.sub, body.code);
+  }
+
+   // ✨ NEW: Disable MFA
+  @Post('disable')
+  async disableMfa(@Req() req: AuthenticatedRequest) {
+    return this.mfaService.disableMfa(req.user.sub);
   }
 }

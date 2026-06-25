@@ -22,7 +22,7 @@ export class IamFeatureOidcController {
   // ✨ Public JWKS Endpoint (JSON Web Key Set - Empty for now since we use HS256)
   @Get('.well-known/jwks.json')
   getJwks() {
-    return { keys: [] };
+    return this.oidcService.getJwksKeys();
   }
 
   // ✨ Protected UserInfo Endpoint

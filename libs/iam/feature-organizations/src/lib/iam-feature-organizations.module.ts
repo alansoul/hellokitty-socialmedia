@@ -3,7 +3,9 @@ import { IamFeatureOrganizationsController } from './iam-feature-organizations.c
 import { IamFeatureOrganizationsService } from './iam-feature-organizations.service';
 import { IamPrismaService } from '@hellokitty/data-access';
 
+
 @Module({
+  imports: [],
   controllers: [IamFeatureOrganizationsController],
   providers: [IamFeatureOrganizationsService, IamPrismaService],
   exports: [IamFeatureOrganizationsService],

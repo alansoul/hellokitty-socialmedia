@@ -1,29 +1,60 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; // ✨ Import Next.js router
 import { Post } from '@hellokitty/types';
 import { Loader2 } from 'lucide-react'; // ✨ For a beautiful loading spinner
 
 const SOCIAL_API =
   process.env.NEXT_PUBLIC_SOCIAL_API_URL || 'http://localhost:3002/api';
+// ✨ Define where the Auth App lives
+const AUTH_APP_URL = process.env.NEXT_PUBLIC_AUTH_APP_URL || 'http://localhost:3004';
+
+// ✨ PKCE helper: Generates a high-entropy cryptographically random string (code_verifier)
+function generateCodeVerifier(): string {
+  const array = new Uint32Array(56);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, dec => ('0' + dec.toString(16)).substring(-2)).join('');
+}
+
+// ✨ PKCE helper: Hashes the verifier with SHA-256 and base64url encodes it (code_challenge)
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hash = await window.crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
 
 export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-
   // ✨ Add this to prevent UI flickering while checking the token!
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  const router = useRouter(); // ✨ Initialize the router
+  const initiateOAuthRedirect = async () => {
+    const clientId = process.env.NEXT_PUBLIC_CLIENT_ID || '';
+    const redirectUri = encodeURIComponent('http://localhost:3000/callback');
+
+    // 1. Generate the PKCE parameters
+    const verifier = generateCodeVerifier();
+    const challenge = await generateCodeChallenge(verifier);
+
+    // 2. Save the verifier in sessionStorage to verify during the callback exchange
+    sessionStorage.setItem('code_verifier', verifier);
+
+    // 3. Redirect the user to the Auth Portal passing PKCE parameters
+    window.location.href = `${AUTH_APP_URL}/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&code_challenge=${challenge}&code_challenge_method=S256`;
+  };
 
   useEffect(() => {
     // Check auth instantly when the page loads
     const token = localStorage.getItem('access_token');
     if (!token) {
-      router.push('/login');
+      initiateOAuthRedirect();
     } else {
       setIsCheckingAuth(false);
       fetchPosts();
@@ -37,28 +68,26 @@ export default function Feed() {
 
       // If no token exists, kick them back to the login page!
       if (!token) {
-        router.push('/login');
+        initiateOAuthRedirect();
         return;
       }
 
       // ✨ 2. Pass the token to the Social API
       const response = await fetch(`${SOCIAL_API}/posts`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          // We no longer need to pass the "Authorization: Bearer" header manually!
+          // The browser will automatically attach the "access_token" cookie!
         },
+        credentials: 'include', // ✨ Crucial: Tells the browser to send cookies!
       });
 
       // ✨ THE FIX: If the token is expired, delete it and kick them out!
       if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        router.push('/login');
+        initiateOAuthRedirect();
         return;
       }
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch posts');
-      }
-
+      if (!response.ok) { throw new Error('Failed to fetch posts'); }
       const data = await response.json();
       setPosts(data);
     } catch (error) {
@@ -72,7 +101,7 @@ export default function Feed() {
 
     const token = localStorage.getItem('access_token');
     if (!token) {
-      router.push('/login');
+      initiateOAuthRedirect();
       return;
     }
 
@@ -99,7 +128,7 @@ export default function Feed() {
       // ✨ Also kick them out here if token expired while typing a post
       if (res.status === 401) {
         localStorage.removeItem('access_token');
-        router.push('/login');
+        initiateOAuthRedirect();
         return;
       }
 

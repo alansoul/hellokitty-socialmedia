@@ -13,7 +13,7 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    const token = this.extractToken(request);
 
     if (!token) {
       throw new UnauthorizedException('Missing authentication token');
@@ -22,8 +22,6 @@ export class JwtAuthGuard implements CanActivate {
     try {
       // ✨ Verify the token signature using the shared secret
       const payload = await this.jwtService.verifyAsync(token, {
-        secret:
-          process.env['JWT_SECRET'] || 'super-secret-dev-key-change-in-prod',
       });
 
       // ✨ Attach the user's data (ID, Email, TenantId) directly to the request!
@@ -34,7 +32,14 @@ export class JwtAuthGuard implements CanActivate {
     return true;
   }
 
-  private extractTokenFromHeader(request: Request): string | undefined {
+  // ✨ Hybrid Extractor: Checks Cookies first, falls back to Headers
+  private extractToken(request: Request): string | undefined {
+    // 1. Try to read from secure HttpOnly Cookies
+    if (request.cookies && request.cookies['access_token']) {
+      return request.cookies['access_token'];
+    }
+
+    // 2. Fallback to standard Authorization: Bearer header (keeps Postman working!)
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }
