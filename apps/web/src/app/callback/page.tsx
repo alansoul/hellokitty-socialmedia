@@ -29,9 +29,10 @@ function CallbackContent() {
       try {
         // ✨ Read the browser-cached verifier to satisfy PKCE S256 verification
         // ✨ Upgraded: Prevent Jest from crashing on sessionStorage in headless runs
-        const codeVerifier = typeof window !== 'undefined'
-          ? sessionStorage.getItem('code_verifier') || ''
-          : '';
+        const codeVerifier =
+          typeof window !== 'undefined'
+            ? sessionStorage.getItem('code_verifier') || ''
+            : '';
 
         const res = await fetch(`${AUTH_API}/oauth/token`, {
           method: 'POST',
