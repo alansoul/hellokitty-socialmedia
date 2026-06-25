@@ -4,5 +4,5 @@ export default function AuthWebRootPage() {
   // Instantly redirect users to the dashboard when they visit the root URL
   redirect('/dashboard');
 
-   return null; // ✨ Explicitly return null to satisfy TypeScript JSX types
+  return null; // ✨ Explicitly return null to satisfy TypeScript JSX types
 }

@@ -22,7 +22,15 @@ function generateCodeVerifier(): string {
 
 // ✨ PKCE helper: Hashes the verifier with SHA-256 and base64url encodes it (code_challenge)
 async function generateCodeChallenge(verifier: string): Promise<string> {
-  if (typeof window === 'undefined' || !verifier) return ''; // Guard
+  if (
+    typeof window === 'undefined' || 
+    !window.crypto || 
+    !window.crypto.subtle || // ◄ Added: Checks if subtle sub-module is mocked in JSDOM!
+    !verifier
+  ) {
+    return '';
+  }
+  
   const encoder = new TextEncoder();
   const data = encoder.encode(verifier);
   const hash = await window.crypto.subtle.digest('SHA-256', data);
