@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { IamPrismaService } from '@hellokitty/data-access';
@@ -200,7 +201,58 @@ export class IamFeatureAuthService {
     });
 
     // Code is perfect! Issue the real JWTs.
-    return this.generateTokens(user.id, user.email, user.tenantId);
+    // ✨ Updated: Passes 'true' to indicate MFA has been verified!
+    return this.generateTokens(user.id, user.email, user.tenantId, true);
+  }
+
+  // -------------------------------------------------------------
+  // ✨ NEW: STEP-UP VERIFICATION (Elevate an active session)
+  // -------------------------------------------------------------
+  async stepUpVerification(userId: string, code: string) {
+    // 1. Fetch the user's active, verified TOTP secret
+    const factor = await this.prisma.mfaFactor.findFirst({
+      where: { userId, type: 'TOTP', verified: true },
+    });
+
+    if (!factor || !factor.secret) {
+      throw new BadRequestException('MFA is not enabled for this user. Please set up MFA first.');
+    }
+
+    // 2. Mathematically verify the code
+    const isValid = speakeasy.totp.verify({
+      secret: factor.secret,
+      encoding: 'base32',
+      token: code,
+      window: 1,
+    });
+
+    if (!isValid) {
+      throw new BadRequestException('Invalid 6-digit verification code.');
+    }
+
+    // 3. Fetch user details to generate elevated tokens
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User not found.');
+
+    this.eventEmitter.emit('audit.user.mfa.stepup', {
+      tenantId: user.tenantId,
+      action: 'user.mfa.stepup',
+      actor: user.email,
+      details: 'User successfully completed a Step-Up MFA verification challenge',
+    });
+
+    // ✨ Generates an access token with mfa_verified = true!
+    return this.generateTokens(user.id, user.email, user.tenantId, true);
+  }
+
+  // -------------------------------------------------------------
+  // DISABLE MFA
+  // -------------------------------------------------------------
+  async disableMfa(userId: string) {
+    await this.prisma.mfaFactor.deleteMany({
+      where: { userId, type: 'TOTP' },
+    });
+    return { success: true, message: 'MFA successfully disabled!' };
   }
 
   // -------------------------------------------------------------
@@ -291,6 +343,7 @@ export class IamFeatureAuthService {
     userId: string,
     email: string,
     tenantId: string,
+    mfaVerified = false // ✨ Added mfaVerified parameter (defaults to false)
   ) {
     // ✨ Fetch all organizations this user belongs to!
     const memberships = await this.prisma.membership.findMany({
@@ -313,6 +366,9 @@ export class IamFeatureAuthService {
       email,
       tenantId,
       org_roles: orgRoles, // <--- The magic happens here!
+      mfa_verified: mfaVerified, // ✨ Embed the secure OIDC step-up claim [6]
+      // ✨ Added: Cryptographic timestamp of when MFA occurred (OIDC Spec) [6]
+      mfa_verified_at: mfaVerified ? Math.floor(Date.now() / 1000) : null,
     };
 
     const accessToken = await this.jwtService.signAsync(payload);

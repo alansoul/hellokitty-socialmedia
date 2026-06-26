@@ -3,9 +3,12 @@ import {
   Post,
   Body,
   UnauthorizedException,
+  UseGuards,
   Res,
+  Req,
 } from '@nestjs/common';
 import { IamFeatureAuthService } from './iam-feature-auth.service';
+import { JwtAuthGuard } from '@hellokitty/shared-security';
 
 // ✨ Local Interface: Decouples our library from the Express package
 interface CookieResponse {
@@ -26,6 +29,10 @@ interface CookieResponse {
 class AuthDto {
   email!: string;
   password!: string;
+}
+
+interface AuthenticatedRequest {
+  user: { sub: string; email: string; tenantId: string };
 }
 
 @Controller('auth')
@@ -76,6 +83,49 @@ export class IamFeatureAuthController {
     );
     this.setAuthCookies(res, data.access_token, data.refresh_token);
     return data;
+  }
+
+  // ✨ NEW: Step-Up MFA Endpoint (Exchanges current active token + code for elevated token)
+  @Post('mfa/step-up')
+  @UseGuards(JwtAuthGuard) // 🔒 Must be logged in to step up!
+  async stepUp(
+    @Body() body: { code: string },
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: CookieResponse
+  ) {
+    if (!body['code']) {
+      throw new UnauthorizedException('Verification code is required.');
+    }
+    const data = await this.authService.stepUpVerification(req.user.sub, body['code']);
+    this.setAuthCookies(res, data.access_token, data.refresh_token);
+    return data;
+  }
+
+  // ✨ NEW: Secure Logout Endpoint (Destroys secure cookies by expiring them) [10]
+  @Post('logout')
+  async logout(
+    @Res({ passthrough: true }) res: CookieResponse
+  ) {
+    const isProduction = process.env['NODE_ENV'] === 'production';
+
+    // We overwrite both cookies with empty values and set maxAge to 0 (instant expiry) [10]
+    res.cookie('access_token', '', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 0, // Expire instantly! [10]
+      path: '/',
+    });
+
+    res.cookie('refresh_token', '', {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 0, // Expire instantly! [10]
+      path: '/',
+    });
+
+    return { success: true, message: 'Logged out successfully.' };
   }
 
   // ✨ Helper to write production-secure HttpOnly cookies

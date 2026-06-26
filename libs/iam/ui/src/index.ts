@@ -11,3 +11,4 @@ export * from './lib/authorize/authorize-view';
 export * from './lib/logs-table/logs-view';
 export * from './lib/mfa/mfa-setup-view';
 export * from './lib/org-switcher/org-switcher';
+export * from './lib/mfa/step-up-provider';

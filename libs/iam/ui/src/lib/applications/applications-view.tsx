@@ -11,6 +11,7 @@ import {
   X,
   Loader2,
 } from 'lucide-react';
+import { useStepUp } from '../mfa/step-up-provider';
 import { toast } from 'sonner';
 
 // Define the shape of our data
@@ -31,8 +32,13 @@ export function ApplicationsView() {
   const [appName, setAppName] = useState('');
   const [appType, setAppType] = useState('SPA');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
 
   const router = useRouter();
+
+   // ✨ Consume the smart safeFetch interceptor!
+  const { safeFetch } = useStepUp();
+
   const AUTH_API =
     process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:3001/api';
 
@@ -46,10 +52,12 @@ export function ApplicationsView() {
           return;
         }
 
-        const res = await fetch(`${AUTH_API}/applications`, {
+        // ✨ Upgraded: Swapped 'fetch' with 'safeFetch' to protect reads
+        const res = await safeFetch(`${AUTH_API}/applications`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include', // ✨ Ensure secure cookies are passed
         });
 
         // ✨ Secure Redirect: Token expired? Go to login!
@@ -71,6 +79,7 @@ export function ApplicationsView() {
     };
 
     fetchApplications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [AUTH_API, router]); // ✨ Added router to dependencies
 
   const copyToClipboard = (text: string) => {
@@ -90,13 +99,15 @@ export function ApplicationsView() {
         return;
       }
 
-      const res = await fetch(`${AUTH_API}/applications`, {
+     // ✨ Upgraded: Swapped 'fetch' with 'safeFetch' to automatically trigger Step-Up MFA!
+      const res = await safeFetch(`${AUTH_API}/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ name: appName, type: appType }),
+        credentials: 'include', // ✨ Ensure secure cookies are passed
       });
 
       if (res.status === 401) {

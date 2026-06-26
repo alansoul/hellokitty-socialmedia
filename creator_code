@@ -5,3 +5,15 @@ npx tree-node-cli -a -L 8 -I "node_modules|.git|.venv|dist|build|.next|.idea|.vs
 npx nx serve core-api --output-style=stream
 
 Get-ChildItem -File -Recurse | Where-Object { $_.Extension -match "\.(ts|tsx|prisma|yaml|yml)$" -and $_.Name -notmatch "\.spec\.ts$|\.spec\.tsx$|jest\.config|global-setup|global-teardown|test-setup|pnpm-lock\.yaml|package-lock\.json" -and $_.FullName -notmatch "\\(node_modules|dist|build|\.next|tmp|\.git|\.nx|minio_data|coverage|.*-e2e)\\" } | ForEach-Object { "`n`n=== START OF FILE: $($_.FullName.Replace($PWD.Path + '\', '')) ===`n"; Get-Content $_.FullName -Raw } | Set-Content codes.txt
+
+
+# 1. Kill the background Nx daemon and wipe corrupt cache databases
+pnpm nx reset
+
+# 2. Force Nx to ignore plugin timeouts in your active PowerShell session [10]
+$env:NX_PLUGIN_NO_TIMEOUTS="true"
+
+# 3. Fire up the development ecosystem again!
+pnpm dev:all
+
+Get-NetTCPConnection -LocalPort 3004 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }

@@ -24,7 +24,7 @@ beforeAll(() => {
   const writableWindow = window as unknown as { location: unknown };
 
   delete writableWindow.location; // Wipes out the JSDOM proxy
-  
+
   writableWindow.location = {
     href: '',
     assign: jest.fn(),

@@ -7,39 +7,46 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
+// ✨ Local Interface: Safely extend Express Request without index signature errors
+interface RequestWithUser extends Request {
+  user?: Record<string, unknown>;
+}
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(private jwtService: JwtService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractToken(request);
+    // ✨ Upgraded: Pass our custom interface as a generic to NestJS getRequest()
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
 
-    if (!token) {
-      throw new UnauthorizedException('Missing authentication token');
-    }
-
-    try {
-      // ✨ Verify the token signature using the shared secret
-      const payload = await this.jwtService.verifyAsync(token, {});
-
-      // ✨ Attach the user's data (ID, Email, TenantId) directly to the request!
-      request['user'] = payload;
-    } catch {
-      throw new UnauthorizedException('Invalid or expired token');
-    }
-    return true;
-  }
-
-  // ✨ Hybrid Extractor: Checks Cookies first, falls back to Headers
-  private extractToken(request: Request): string | undefined {
-    // 1. Try to read from secure HttpOnly Cookies
+    // 1. Try verifying the HttpOnly cookie first [7.1]
     if (request.cookies && request.cookies['access_token']) {
-      return request.cookies['access_token'];
+      try {
+        const payload = await this.jwtService.verifyAsync(request.cookies['access_token']);
+        request.user = payload; // ✨ Fixed: Clean, type-safe assignment! [7.1]
+        return true; // Cookie is valid, proceed securely!
+      } catch {
+        // Token in cookie is expired or invalid, do NOT crash yet.
+        // Fall back to check if the header has a fresh valid token.
+      }
     }
 
-    // 2. Fallback to standard Authorization: Bearer header (keeps Postman working!)
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    // 2. Fallback: Verify the standard Authorization Header [7.1]
+    const authHeader = request.headers.authorization;
+    const [type, token] = authHeader?.split(' ') ?? [];
+    
+    if (type === 'Bearer' && token) {
+      try {
+        const payload = await this.jwtService.verifyAsync(token);
+        request.user = payload; // ✨ Fixed: Clean, type-safe assignment! [7.1]
+        return true; // Header is valid, proceed!
+      } catch {
+        // Both cookie and header failed verification
+      }
+    }
+
+    // 3. Both verification methods failed or are missing [7.1]
+    throw new UnauthorizedException('Invalid or expired token');
   }
 }

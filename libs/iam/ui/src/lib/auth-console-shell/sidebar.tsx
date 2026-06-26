@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   AppWindow,
@@ -11,6 +12,7 @@ import {
   Settings,
   Activity,
   LogOut,
+  Loader2,
 } from 'lucide-react';
 
 const navigation = [
@@ -25,6 +27,25 @@ const navigation = [
 
 export function AuthConsoleSidebar() {
   const pathname = usePathname();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const AUTH_API = process.env['NEXT_PUBLIC_AUTH_API_URL'] || 'http://localhost:3001/api';
+
+  // ✨ Upgraded: Call the secure logout API to destroy HttpOnly cookies! [10]
+  const handleSignOut = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch(`${AUTH_API}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include', // ✨ Required to pass cookie credentials
+      });
+    } catch {
+      // Proceed to clear local storage anyway if API is unreachable
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      window.location.href = '/login';
+    }
+  };
 
   return (
     <aside className="w-64 bg-[#F9FAFB] border-r border-gray-200 flex flex-col h-full">
@@ -66,14 +87,16 @@ export function AuthConsoleSidebar() {
       {/* Bottom Profile / Logout */}
       <div className="p-4 border-t border-gray-200/60 bg-white">
         <button
-          onClick={() => {
-            localStorage.removeItem('access_token');
-            window.location.href = '/login';
-          }}
-          className="flex items-center gap-3 w-full px-3 py-2 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors group"
+          onClick={handleSignOut}
+          disabled={loggingOut}
+          className="flex items-center gap-3 w-full px-3 py-2 text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors group disabled:opacity-50"
         >
-          <LogOut className="w-[18px] h-[18px] group-hover:text-red-500 text-gray-400" />
-          Sign Out
+          {loggingOut ? (
+            <Loader2 className="w-[18px] h-[18px] animate-spin text-red-500" />
+          ) : (
+            <LogOut className="w-[18px] h-[18px] group-hover:text-red-500 text-gray-400" />
+          )}
+          {loggingOut ? 'Signing Out...' : 'Sign Out'}
         </button>
       </div>
     </aside>
